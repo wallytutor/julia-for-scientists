@@ -35,7 +35,7 @@ como referências para os conteúdos aqui resumidos.
 - [Preâmbulo e Pluto](tutorials/000-preambulo-e-pluto.jl)
 - [Primeiros passos](tutorials/001-primeiros-passos.jl)
 - [Manipulação textual](tutorials/002-manipulacao-textual.jl)
-- ...
+- [Estruturas de dados](tutorials/003-estruturas-de-dados.jl)
 - ...
 - Gráficos para publicações
 - Criando novos tipos de dados

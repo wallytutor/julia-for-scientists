@@ -18,11 +18,7 @@ using PythonCall
 using LinearAlgebra
 
 # ╔═╡ ee43291c-fdd6-482e-b981-3478989679ed
-md"""
-## Estruturas de dados
 
-Nesta seção vamos estudar alguns tipos de estruturas de dados. Essas formas *compostas* são construídas sobre elementos que já vimos mas podem também ir além destes. Abordaremos apenas as características básicas de cada uma das estruturas apresentadas e os casos de aplicação se tornarão evidentes. Os diversos métodos comuns à essas coleções é descrito [nesta página](https://docs.julialang.org/en/v1/base/collections/).
-"""
 
 # ╔═╡ f57557b9-15f6-4fdf-8186-9de5a136f810
 md"""
@@ -1255,7 +1251,7 @@ version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─ee43291c-fdd6-482e-b981-3478989679ed
+# ╠═ee43291c-fdd6-482e-b981-3478989679ed
 # ╟─f57557b9-15f6-4fdf-8186-9de5a136f810
 # ╠═836147d1-3e4b-4277-b58a-cdb6266002d2
 # ╟─95980d0d-3c7d-4dbd-bb4e-536636dc7c11
