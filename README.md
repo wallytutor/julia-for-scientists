@@ -1,9 +1,22 @@
-# Julia for Scientists
+# Julia para Cientistas
 
-Julia from zero to hero with an approach for scientific computation.
+Julia *from zero to hero* com uma abordagem para computação científica.
 
-## Before you start
+## Antes de começar
 
-## How to follow the tutorials
+## Como seguir os materiais
 
-## Where to go from here?
+## Para aonde ir depois?
+
+## Conteúdos
+
+- Primeiros passos em programação com Julia
+- ...
+- ...
+- Gráficos para publicações
+- Criando novos tipos de dados
+- Metaprogramação e macros
+- Usando bibliotecas externas
+- Equações diferenciais ordinárias
+- Equações diferenciais parciais
+- ...
