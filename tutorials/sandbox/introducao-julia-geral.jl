@@ -17,37 +17,6 @@ using PythonCall
 # https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.cross
 using LinearAlgebra
 
-# ╔═╡ 7d247d43-3f08-4b75-9348-7be8063dee91
-md"""
-### Conversão explícita
-
-Se um número real pode ser representado por um tipo inteiro, podemos utilizar a função `convert()` para a transformação desejada. Caso a representação integral não seja possível, talvez você possa obter o resultado almejado usando uma das funções `round()`, `floor()`, ou `ceil()`, as quais você pode verificar na documentação da linguagem.
-"""
-
-# ╔═╡ eb0b2bf7-15b9-4371-b936-8f124f2640aa
-convert(Int64, a_number) == 234
-
-# ╔═╡ c4328aa3-4d59-4b2f-b088-88d8105641d0
-md"""
-Funções em Julia também podem ser aplicadas a múltiplos argumentos de maneira sequencial em se adicionando um ponto entre o nome da função e o parêntesis de abertura dos argumentos. Por exemplo, para trabalhar com cores RGB é usual empregar-se o tipo `UInt8` que é limitado à 255, reduzindo a sua representação em memória.
-
-A conversão abaixo se aplica a sequência de números `color` individualmente.
-"""
-
-# ╔═╡ e7a783a3-180e-4bd8-ba5c-e617dd95e64c
-begin
-	color = (255.0, 20.0, 21.0)
-	convert.(UInt8, color)
-end
-
-# ╔═╡ 7c76cb39-52c5-4a9c-a078-241b39641913
-md"""
-Finalmente, formas textuais podem ser interpretadas como números usando `parse()`.
-"""
-
-# ╔═╡ 3666426a-c0b2-4030-a415-30bea8657921
-parse(Int64, "1")
-
 # ╔═╡ b3893af3-072e-45c6-8746-78390bbafd5a
 md"""
 ## Manipulação textual
@@ -1427,12 +1396,6 @@ version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─7d247d43-3f08-4b75-9348-7be8063dee91
-# ╠═eb0b2bf7-15b9-4371-b936-8f124f2640aa
-# ╟─c4328aa3-4d59-4b2f-b088-88d8105641d0
-# ╠═e7a783a3-180e-4bd8-ba5c-e617dd95e64c
-# ╟─7c76cb39-52c5-4a9c-a078-241b39641913
-# ╠═3666426a-c0b2-4030-a415-30bea8657921
 # ╟─b3893af3-072e-45c6-8746-78390bbafd5a
 # ╠═9759ce9c-edf8-4d90-86c2-923b7f9be6d0
 # ╟─27fcbc2e-3a85-447c-9fe8-061666037569

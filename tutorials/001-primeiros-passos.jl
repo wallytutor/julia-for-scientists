@@ -234,6 +234,37 @@ O valor de π também pode ser representado por `pi`. Observe que a multiplicaç
 # ╔═╡ b15f5c36-4ede-4ecb-9247-c7726329eb0c
 typeof(2pi)
 
+# ╔═╡ 7b1666b8-0a0a-4109-9e6f-61807dd16501
+md"""
+## Conversão explícita
+
+Se um número real pode ser representado por um tipo inteiro, podemos utilizar a função `convert()` para a transformação desejada. Caso a representação integral não seja possível, talvez você possa obter o resultado almejado usando uma das funções `round()`, `floor()`, ou `ceil()`, as quais você pode verificar na documentação da linguagem.
+"""
+
+# ╔═╡ 910e6a75-9fdb-4333-8c32-7a1fdca0b6bb
+convert(Int64, a_number) == 234
+
+# ╔═╡ 5b690d31-20e6-49a4-99a6-63e1377966ef
+md"""
+Funções em Julia também podem ser aplicadas a múltiplos argumentos de maneira sequencial em se adicionando um ponto entre o nome da função e o parêntesis de abertura dos argumentos. Por exemplo, para trabalhar com cores RGB é usual empregar-se o tipo `UInt8` que é limitado à 255, reduzindo a sua representação em memória.
+
+A conversão abaixo se aplica a sequência de números `color` individualmente.
+"""
+
+# ╔═╡ 74232fe5-3f71-4733-a283-bdab7194c02b
+begin
+    color = (255.0, 20.0, 21.0)
+    convert.(UInt8, color)
+end
+
+# ╔═╡ f9213fc8-e881-4d3b-9437-a5cc3093dae1
+md"""
+Finalmente, formas textuais podem ser interpretadas como números usando `parse()`.
+"""
+
+# ╔═╡ 96cb2bdc-8bcf-4b48-91d0-dad5fe035999
+parse(Int64, "1")
+
 # ╔═╡ 186bc64c-230b-440b-ac40-68ad33aa9333
 md"""
 Isso é tudo para essa seção de estudo! Até a próxima!
@@ -553,6 +584,12 @@ version = "17.4.0+0"
 # ╠═6e482723-609f-4ac7-9f2d-fd833a6a9251
 # ╟─b8c8c94d-2bb5-463f-81c1-e10876efda68
 # ╠═b15f5c36-4ede-4ecb-9247-c7726329eb0c
+# ╟─7b1666b8-0a0a-4109-9e6f-61807dd16501
+# ╠═910e6a75-9fdb-4333-8c32-7a1fdca0b6bb
+# ╟─5b690d31-20e6-49a4-99a6-63e1377966ef
+# ╠═74232fe5-3f71-4733-a283-bdab7194c02b
+# ╟─f9213fc8-e881-4d3b-9437-a5cc3093dae1
+# ╠═96cb2bdc-8bcf-4b48-91d0-dad5fe035999
 # ╟─186bc64c-230b-440b-ac40-68ad33aa9333
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
