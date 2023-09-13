@@ -33,7 +33,7 @@ interessante para ir mais longe no aprendizado ou que foram utilizados
 como referências para os conteúdos aqui resumidos.
 
 - [Preâmbulo e Pluto](tutorials/000-preambulo-e-pluto.jl)
-- Primeiros passos em programação com Julia
+- [Primeiros passos](tutorials/001-primeiros-passos.jl)
 - ...
 - ...
 - Gráficos para publicações
