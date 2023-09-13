@@ -34,6 +34,7 @@ como referências para os conteúdos aqui resumidos.
 
 - [Preâmbulo e Pluto](tutorials/000-preambulo-e-pluto.jl)
 - [Primeiros passos](tutorials/001-primeiros-passos.jl)
+- [Manipulação textual](tutorials/002-manipulacao-textual.jl)
 - ...
 - ...
 - Gráficos para publicações

@@ -267,7 +267,7 @@ parse(Int64, "1")
 
 # ╔═╡ 186bc64c-230b-440b-ac40-68ad33aa9333
 md"""
-Isso é tudo para essa seção de estudo! Até a próxima!
+Isso é tudo para esta sessão de estudo! Até a próxima!
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
