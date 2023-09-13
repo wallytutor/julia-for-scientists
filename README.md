@@ -4,9 +4,12 @@ Julia *from zero to hero* com uma abordagem para computação científica.
 
 ## Antes de começar
 
-1. [Instalar Julia](https://julialang.org/downloads/) na versão estável para seu sistema operacional.
-1. [Instalar Pluto](https://github.com/fonsp/Pluto.jl) para visualizar e editar os notebooks do curso.
-1. Clonar este repositório com todos os materiais usando a seguinte ordem de prioridade:
+1. [Instalar Julia](https://julialang.org/downloads/) na versão
+    estável para seu sistema operacional.
+1. [Instalar Pluto](https://github.com/fonsp/Pluto.jl) para
+    visualizar e editar os notebooks do curso.
+1. Clonar este repositório com todos os materiais usando a seguinte
+    ordem de prioridade:
 
     - Usando a linha de comando `git clone https://github.com/wallytutor/julia-for-scientists.git`
     - Com a interface gráfica de [GitHub Desktop](https://desktop.github.com/)
@@ -29,6 +32,7 @@ As sub-listas de cada tópico apresentam links externos que julgo
 interessante para ir mais longe no aprendizado ou que foram utilizados
 como referências para os conteúdos aqui resumidos.
 
+- [Preâmbulo e Pluto](tutorials/000-preambulo-e-pluto.jl)
 - Primeiros passos em programação com Julia
 - ...
 - ...
@@ -79,3 +83,8 @@ como referências para os conteúdos aqui resumidos.
 - [Julia Packages](https://juliapackages.com/): o repositório mestre do índice
     de pacotes escritos na linguagem Julia ou provendo interfaces à outras
     ferramentas. A página contém um sistema de busca e um índice por temas.
+
+- [JuliaHub](https://juliahub.com/): esta plataforma comercial provê tudo que
+    é necessário para se passar da prototipagem à escala industrial de soluções
+    concebidas em Julia. Atualmente é a norma em termos de escalabilidade para
+    a linguagem.
