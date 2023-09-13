@@ -75,3 +75,7 @@ como referências para os conteúdos aqui resumidos.
     ajuda ou buscando um projeto para contribuir? Este chat aberto da comunidade
     Julia é o ponto de encontro para discutir acerca dos diferenter projetos
     e avanços na linguagem.
+
+- [Julia Packages](https://juliapackages.com/): o repositório mestre do índice
+    de pacotes escritos na linguagem Julia ou provendo interfaces à outras
+    ferramentas. A página contém um sistema de busca e um índice por temas.

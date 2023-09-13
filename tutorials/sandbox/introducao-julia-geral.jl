@@ -4,13 +4,6 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ cff5bab6-80b0-43b5-ad29-b4180326032a
-begin
-	using PlutoUI
-
-	TableOfContents(title="Tópicos")
-end
-
 # ╔═╡ d9a638f7-2b1b-42b2-b4a8-9639d8083ba5
 using Colors
 
@@ -23,52 +16,6 @@ using PythonCall
 # ╔═╡ 8427738c-7d0e-49a9-897c-8eaba766fede
 # https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.cross
 using LinearAlgebra
-
-# ╔═╡ 91e5ab50-2eaa-11ee-2069-75ca6e6ca1c9
-md"""
-# Introdução à Julia
-
-Neste tutorial apresentamos em um único documento tudo que é necessário para acompanhar o livro texto em relação a linguagem de programação [Julia](https://julialang.org/). Os conteúdos aqui apresentados são uma extensão daqueles providos pela [JuliaAcademy](https://juliaacademy.com/) em seu [curso introdutório](https://github.com/JuliaAcademy/Introduction-to-Julia). O objetivo desta extensão é apresentar alguns elementos suplementares para a prática de computação numérica. A temática de gráficos em Julia, no entanto, é abordada em um tutorial a parte, visto que para nossos objetivos uma abordagem mais detalhada é necessária.
-
-Julia é sintaticamente uma linguagem similar à [Python](https://www.python.org/) mas o estilo de programação tipicamente adotado tende a ser procedural com uso de estruturas. Esta nova linguagem publicada pela primeira vez em 2012 vem ganhando *momentum* e uma comunidade bastante interessante na sua diversidade científica. Após alguns anos hesitando em me engajar no seu uso para aplicações em pesquisa em desenvolvimento, em 2023 fui convencido que é chegada hora de transferir parte dos estudos em Julia e então adaptar todos os conteúdos do livro texto a esta linguagem
-
-Recomenda-se o estudo do presente tutorial de forma interativa em uma longa seção de aproximadamente 4 horas de estudo. Após este primeiro contato, a leitura do livro e seus tutoriais se tornará acessível mesmo para aqueles que estão tendo seu primeiro contato com computação. Este tutorial pode ao longo do estudo ser consultado para clarificar elementos da linguagem. Uma vez que se encontre confortável com o conteúdo aqui apresentado, recomenda-se estudar o [manual](https://docs.julialang.org/en/v1/manual/getting-started/) da linguagem, o qual apresenta detalhes omitidos nesta introdução almejada para um primeiro contato.
-
-!!! tip "Dica"
-
-	Julia possui um largo ecossistema de pacotes implementado uma vasta gama de funcionalidades. Para conhecer mais não deixe de visitar [Julia Packages](https://juliapackages.com/).
-
-Para facilitar a navegação, a próxima célula nos fornece a lista de tópicos a direita.
-"""
-
-# ╔═╡ 1a58dc95-f794-4928-a060-07323f6209aa
-md"""
-!!! note "Nota"
-
-	Este *notebook* e os demais que acompanham o livro texto são concebidos com a tecnologia [Pluto](https://plutojl.org/). Pluto foi concebido principalmente para o ensino e reproductibilidade de *notebooks*. Duas particularidades são advindas as escolhas de design de Pluto que você precisa saber antes de prosseguir:
-
-	1. Uma variável pode ser atribuída em uma única célula no contexto global, o que é na verdade uma boa prática de programação e dá segurança a correta execução do programa.
-
-	1. Dado o caráter educacional e para a apresentação de resultados, somente uma expressão é permitida por célula. Para realizar várias declarações em conjunto, devemos encapsulá-las em um bloco como se segue [^1]:
-
-	```julia
-	begin
-	...
-	end
-	```
-
-	ou então
-
-	```julia
-	let
-	...
-	end
-	```
-
-	Veremos as diferenças dessas sintaxes em um momento oportuno.
-
-	[^1]: Existem outras aplicações deste bloco de [expressões compostas](https://docs.julialang.org/en/v1/manual/control-flow/#man-compound-expressions) na linguagem num contexto de concepção de programas e pacotes, os quais veremos no seu devido tempo.
-"""
 
 # ╔═╡ 03ba5ef8-c9c8-4da0-9fef-6fb24f40364a
 md"""
@@ -1347,13 +1294,11 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 PythonCall = "6099a3de-0909-46bc-b1f4-468b9a2dfc0d"
 
 [compat]
 BenchmarkTools = "~1.3.2"
 Colors = "~0.12.10"
-PlutoUI = "~0.7.52"
 PythonCall = "~0.9.14"
 """
 
@@ -1363,13 +1308,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.0"
 manifest_format = "2.0"
-project_hash = "97ebd889132c2d84e124da715ad26494b8e647f2"
-
-[[deps.AbstractPlutoDingetjes]]
-deps = ["Pkg"]
-git-tree-sha1 = "91bd53c39b9cbfb5ef4b015e8b582d344532bd0a"
-uuid = "6e696c72-6542-2067-7265-42206c756150"
-version = "1.2.0"
+project_hash = "3a8b8a600e9b79c8012cc19d155b84c32dafd2c0"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -1438,24 +1377,6 @@ git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.8.4"
 
-[[deps.Hyperscript]]
-deps = ["Test"]
-git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
-uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
-version = "0.0.4"
-
-[[deps.HypertextLiteral]]
-deps = ["Tricks"]
-git-tree-sha1 = "c47c5fa4c5308f27ccaac35504858d8914e102f9"
-uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
-version = "0.9.4"
-
-[[deps.IOCapture]]
-deps = ["Logging", "Random"]
-git-tree-sha1 = "d75853a0bdbfb1ac815478bacd89cd27b550ace6"
-uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
-version = "0.2.3"
-
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
@@ -1516,11 +1437,6 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
-[[deps.MIMEs]]
-git-tree-sha1 = "65f28ad4b594aebe22157d6fac869786a255b7eb"
-uuid = "6c6e2e6c-3030-632d-7369-2d6c69616d65"
-version = "0.1.4"
-
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
 git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
@@ -1579,12 +1495,6 @@ version = "1.3.0"
 deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 version = "1.9.0"
-
-[[deps.PlutoUI]]
-deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
-git-tree-sha1 = "e47cd150dbe0443c3a3651bc5b9cbd5576ab75b7"
-uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.52"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
@@ -1693,16 +1603,6 @@ version = "1.10.0"
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[[deps.Tricks]]
-git-tree-sha1 = "aadb748be58b492045b4f56166b5188aa63ce549"
-uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
-version = "0.1.7"
-
-[[deps.URIs]]
-git-tree-sha1 = "074f993b0ca030848b897beff716d93aca60f06a"
-uuid = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
-version = "1.4.2"
-
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
@@ -1743,9 +1643,6 @@ version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─91e5ab50-2eaa-11ee-2069-75ca6e6ca1c9
-# ╠═cff5bab6-80b0-43b5-ad29-b4180326032a
-# ╟─1a58dc95-f794-4928-a060-07323f6209aa
 # ╟─03ba5ef8-c9c8-4da0-9fef-6fb24f40364a
 # ╟─a1cc72b6-7476-4c53-8973-87f3e5e83b04
 # ╠═375a4774-12cb-4fc2-a79e-73d1338e38d9
