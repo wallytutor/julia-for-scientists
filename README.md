@@ -42,6 +42,7 @@ como referências para os conteúdos aqui resumidos.
 - Equações diferenciais parciais
 - Redes neuronais clássicas
 - Aprendizado com suporte físico
+- Criando seus próprios pacotes
 - ...
 
 ## Para aonde ir depois?
@@ -64,9 +65,13 @@ como referências para os conteúdos aqui resumidos.
     vídeo aulas e entram em mais profundidade nos assuntos avançados que tratamos
     aqui.
 
+- [Exercism Julia Track](https://exercism.org/tracks/julia): a plataforma
+    *Exercism* propõe no percurso de Julia vários exercícios de algoritmos de
+    nível fácil à intermediário-avançado. Minha recomendação é que essa prática
+    venha a complementar os materiais propostos acima como forma de sedimentar
+    o aprendizado da linguagem.
+
 - [Julia Community Zulipchat](https://julialang.zulipchat.com/): precisando de
     ajuda ou buscando um projeto para contribuir? Este chat aberto da comunidade
     Julia é o ponto de encontro para discutir acerca dos diferenter projetos
     e avanços na linguagem.
-
-
