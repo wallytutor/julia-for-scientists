@@ -38,13 +38,13 @@ como referências para os conteúdos aqui resumidos.
 - [Estruturas de dados I](tutorials/003-estruturas-de-dados.jl)
 - [Estruturas de dados II](tutorials/004-estruturas-de-dados.jl)
 - [Laços e conditionais](tutorials/005-lacos-e-condicionais.jl)
-- [Funções e despacho múltiplo](006-funcoes-e-despacho.jl)
-- [Pacotes e ecossistema](007-pacotes-e-ecossistema.jl)
-- [Avaliando performance](008-avaliando-performance.jl)
-- [Álgebra linear](009-algebra-linear.jl)
-- [Expressões regulares](010-expressoes-regulares.jl)
-- [Execução concorrente](011-execucao-concorrente.jl)
-- [Trabalhando com arquivos](012-trabalhando-com-arquivos.jl)
+- [Funções e despacho múltiplo](tutorials/006-funcoes-e-despacho.jl)
+- [Pacotes e ecossistema](tutorials/007-pacotes-e-ecossistema.jl)
+- [Avaliando performance](tutorials/008-avaliando-performance.jl)
+- [Álgebra linear](tutorials/009-algebra-linear.jl)
+- [Expressões regulares](tutorials/010-expressoes-regulares.jl)
+- [Execução concorrente](tutorials/011-execucao-concorrente.jl)
+- [Trabalhando com arquivos](tutorials/012-trabalhando-com-arquivos.jl)
 - ...
 - Gráficos para publicações
 - Criando novos tipos de dados
