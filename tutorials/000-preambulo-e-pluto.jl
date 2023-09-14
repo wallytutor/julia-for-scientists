@@ -7,7 +7,6 @@ using InteractiveUtils
 # ╔═╡ 6f694879-9008-407c-b3cb-ab0340a0713a
 begin
     using PlutoUI
-
     TableOfContents(title = "Tópicos")
 end
 
