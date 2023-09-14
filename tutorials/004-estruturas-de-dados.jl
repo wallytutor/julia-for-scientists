@@ -11,11 +11,173 @@ md"""
 
 # ╔═╡ d0cba36d-01b0-425d-9677-dd188cedbd04
 md"""
-## Seção
+## *Arrays*
+
+A estrutura `Array` se diferencia de `Tuple` pelo fato de ser mutável e de `Dict` pela noção de ordem. Dadas essas características não é surpreendente que seja esse o tipo de base sobre o qual Julia constrói vetores e matrizes, embora um `Array` seja mais genérico que esses conceitos matemáticos. Podemos, por exemplo, construir um `Array` contendo sub-`Array`'s de tamanho variável, o que não constituiria uma matriz. Ou então misturar tipos de dados nos elementos de um `Array`, como mostramos ser possível com `Tuple`.
+
+Em termos de sintaxe, usamos nesse caso colchetes `[]` para limitar a sequência.
+
+Considere por exemplo a seguinte lista de países...
 """
 
 # ╔═╡ e4428ffe-6180-4145-bed6-08ca5bd2f179
+countries = ["France", "Brazil", "Germany"]
 
+# ╔═╡ 715c4df3-20ae-485c-8ec8-6ceddc85e435
+md"""
+...ou então de números,...
+"""
+
+# ╔═╡ 81ee5eea-c845-45f3-839f-261438bb18da
+numbers = [1, 2, 3.1]
+
+# ╔═╡ 186e1ce9-10f8-4c78-8da2-d8c158922498
+md"""
+..., ou simplesmente informações pessoais.
+"""
+
+# ╔═╡ 30c53c06-bad5-4393-be43-6e45f08aafff
+personal_info = ["Walter", 34, "Lyon"]
+
+# ╔═╡ d28455d2-7087-49d9-b11a-76a2e287f423
+md"""
+O acesso a elementos se faz através de índices, como em `Tuple`.
+"""
+
+# ╔═╡ d15f2c5e-6983-497a-af35-050a1863e79c
+personal_info[2]
+
+# ╔═╡ fed7d7b0-9018-46a2-9eda-a360dc82688f
+md"""
+Como essa estrutura é mutável ela suporta -- [entre muitos outros](https://docs.julialang.org/en/v1/base/arrays/) -- o método `push!()` para se adicionar um elemento após o último.
+"""
+
+# ╔═╡ 43eaf40c-ec42-48f7-8494-9504884f301b
+push!(personal_info, "Engineer")
+
+# ╔═╡ c73e2b54-dca0-4635-ad2f-888d5924b282
+md"""
+De maneira similar ao que vimos para `Dict`, uma implementação de `pop!()` é disponível para o tipo `Array`, realizando a operação inversa de `push!()`.
+"""
+
+# ╔═╡ e7960796-2800-465d-9782-c3345cfef98b
+pop!(personal_info)
+
+# ╔═╡ 5a557511-de4b-4dcd-ad47-b204cd186db8
+md"""
+O exemplo de uma *não-matriz* citado na introdução é apresentado a seguir.
+"""
+
+# ╔═╡ 535f8185-995d-40b8-afa7-5cef162b2338
+not_a_matrix = [[1, 2, 3], [4, 5], [6, 7, 8, 9]]
+
+# ╔═╡ d5d7d18d-a401-4fcd-a6f9-3f447e12a98c
+md"""
+Usando `typeof()` descobrimos que se trata de um `Vector` de `Vector` e que na verdade Julia usa `Vector` com um *alias* para um `Array{T, 1}`, aonde `T` denota o tipo de dado.
+"""
+
+# ╔═╡ 21d1c153-cb0b-49b5-9fbc-a8fa0f73f9dd
+typeof(not_a_matrix)
+
+# ╔═╡ b328ae4d-49cd-43f5-a8f7-abf775874c80
+md"""
+A função [`rand()`](https://docs.julialang.org/en/v1/stdlib/Random/#Base.rand) pode ser usada para criar uma matriz de números aleatórios -- e outras estruturas de ordem superior -- como se segue. Observe o tipo `Matrix{Float64}` indicado.
+"""
+
+# ╔═╡ 860f3e80-d717-4f42-a758-1abab49c2daa
+a_matrix = rand(3, 3)
+
+# ╔═╡ bcf85815-6dfb-4b32-8877-087072813665
+md"""
+Repetindo a verificação de tipo como fizemos para of *vetor de vetores* anteriormente, descobrimos que uma `Matrix` em Julia não é interpretada da mesma maneira, mas como um `Array` com duas dimensões. Isso é a forma que a linguagem emprega para assegurar as dimensões constantes segundo cada direção da matriz.
+"""
+
+# ╔═╡ f2e84314-d964-42f8-b725-7f307ca4ad21
+typeof(a_matrix)
+
+# ╔═╡ c8b40514-5aef-42f1-addf-2e8b2dab649f
+md"""
+Vamos agora atribuir nossa `a_matrix` à uma outra variável e então modificar a matrix original.
+"""
+
+# ╔═╡ a6f9d8f4-3631-4d85-91c2-8dff1f783faf
+begin
+    maybe_another_matrix = a_matrix
+    a_matrix[1, 1] = 999
+    a_matrix
+end
+
+# ╔═╡ ae795a89-678a-440f-b36e-8ca278c6af04
+md"""
+Tal como para a `Tuple` com objetos mutáveis, atribuir um novo nome à uma matriz não cria uma nova matriz, apenas referencia o seu endereço de memória: observamos abaixo que a tentativa de cópia `maybe_another_matriz` também é modificada em razão da operação sobre `a_matrix`.
+"""
+
+# ╔═╡ b0412585-f2fc-4c43-a563-776133c93d86
+maybe_another_matrix
+
+# ╔═╡ 2d9e4441-9fec-4610-8cd6-1ee567ebe837
+md"""
+Quando uma cópia da matriz é necessária devemos utilizar `copy()`. Nas próximas células criamos uma matriz e então uma cópia, a qual é modificada, e verificamos não haver impacto na matriz original, validando a cópia em um novo endereço de memória.
+"""
+
+# ╔═╡ 734562d1-8016-4fa1-b21c-db9fd6da5cb9
+begin
+    another_matrix = rand(2, 2)
+    another_matrix
+end
+
+# ╔═╡ cfe59ba2-bc37-49ec-864a-b231f5ad8f07
+begin
+    again_a_matrix = copy(another_matrix)
+    again_a_matrix[1, 2] = 0
+    again_a_matrix
+end
+
+# ╔═╡ 7e8106ea-177f-4df8-8ccf-a589464a781b
+another_matrix
+
+# ╔═╡ 4d831b57-af10-4f79-b7d4-cd95e59f5b8e
+md"""
+## *Ranges*
+"""
+
+# ╔═╡ e6a2b219-d776-4e5a-bf23-41ab6cf2f5fa
+range_of_numbers = 1:10
+
+# ╔═╡ a76497eb-c1f4-420d-8aa7-a5b95d1c2142
+typeof(range_of_numbers)
+
+# ╔═╡ ee0b6b65-9e6e-4ba6-a29b-a996d97380de
+collect(range_of_numbers)
+
+# ╔═╡ a639a716-4a55-49b4-94cd-1e7285cb2678
+float_range = 1:0.6:10
+
+# ╔═╡ 78fd40d8-bd00-4b00-b6ec-1bf70a41e3ac
+collect(float_range)
+
+# ╔═╡ c7ed7434-0277-409a-a082-15518ed09ebd
+typeof(float_range)
+
+# ╔═╡ ac221166-290c-45d3-89ff-c5c61e6f73f8
+md"""
+## Atribuição de tipos
+"""
+
+# ╔═╡ 6628c659-435f-45ea-a899-f761e5a655d1
+@time ai::Vector{Int64} = collect(1:10)
+
+# ╔═╡ ab0e828e-6c01-462f-a410-7ac81a23050b
+@time af::Vector{Float64} = collect(1:10)
+
+# ╔═╡ ecacb086-7b70-4d8a-b5f9-26283530afcf
+typeof(af)
+
+# ╔═╡ a59c8e9e-bc5c-4ae8-b9b0-eaebde637f64
+@time b::Vector{Float64} = collect(1.0:10.0)
+
+# ╔═╡ 07cb0ba2-3328-4ec2-8263-9aea918c411b
+# TODO
 
 # ╔═╡ 542763c5-b1d7-4e3f-b972-990f1d14fe39
 md"""
@@ -303,6 +465,45 @@ version = "17.4.0+0"
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
 # ╟─d0cba36d-01b0-425d-9677-dd188cedbd04
 # ╠═e4428ffe-6180-4145-bed6-08ca5bd2f179
+# ╟─715c4df3-20ae-485c-8ec8-6ceddc85e435
+# ╠═81ee5eea-c845-45f3-839f-261438bb18da
+# ╟─186e1ce9-10f8-4c78-8da2-d8c158922498
+# ╠═30c53c06-bad5-4393-be43-6e45f08aafff
+# ╟─d28455d2-7087-49d9-b11a-76a2e287f423
+# ╠═d15f2c5e-6983-497a-af35-050a1863e79c
+# ╟─fed7d7b0-9018-46a2-9eda-a360dc82688f
+# ╠═43eaf40c-ec42-48f7-8494-9504884f301b
+# ╟─c73e2b54-dca0-4635-ad2f-888d5924b282
+# ╠═e7960796-2800-465d-9782-c3345cfef98b
+# ╟─5a557511-de4b-4dcd-ad47-b204cd186db8
+# ╠═535f8185-995d-40b8-afa7-5cef162b2338
+# ╟─d5d7d18d-a401-4fcd-a6f9-3f447e12a98c
+# ╠═21d1c153-cb0b-49b5-9fbc-a8fa0f73f9dd
+# ╟─b328ae4d-49cd-43f5-a8f7-abf775874c80
+# ╠═860f3e80-d717-4f42-a758-1abab49c2daa
+# ╟─bcf85815-6dfb-4b32-8877-087072813665
+# ╠═f2e84314-d964-42f8-b725-7f307ca4ad21
+# ╟─c8b40514-5aef-42f1-addf-2e8b2dab649f
+# ╠═a6f9d8f4-3631-4d85-91c2-8dff1f783faf
+# ╟─ae795a89-678a-440f-b36e-8ca278c6af04
+# ╠═b0412585-f2fc-4c43-a563-776133c93d86
+# ╟─2d9e4441-9fec-4610-8cd6-1ee567ebe837
+# ╠═734562d1-8016-4fa1-b21c-db9fd6da5cb9
+# ╠═cfe59ba2-bc37-49ec-864a-b231f5ad8f07
+# ╠═7e8106ea-177f-4df8-8ccf-a589464a781b
+# ╠═4d831b57-af10-4f79-b7d4-cd95e59f5b8e
+# ╠═e6a2b219-d776-4e5a-bf23-41ab6cf2f5fa
+# ╠═a76497eb-c1f4-420d-8aa7-a5b95d1c2142
+# ╠═ee0b6b65-9e6e-4ba6-a29b-a996d97380de
+# ╠═a639a716-4a55-49b4-94cd-1e7285cb2678
+# ╠═78fd40d8-bd00-4b00-b6ec-1bf70a41e3ac
+# ╠═c7ed7434-0277-409a-a082-15518ed09ebd
+# ╟─ac221166-290c-45d3-89ff-c5c61e6f73f8
+# ╠═6628c659-435f-45ea-a899-f761e5a655d1
+# ╠═ab0e828e-6c01-462f-a410-7ac81a23050b
+# ╠═ecacb086-7b70-4d8a-b5f9-26283530afcf
+# ╠═a59c8e9e-bc5c-4ae8-b9b0-eaebde637f64
+# ╠═07cb0ba2-3328-4ec2-8263-9aea918c411b
 # ╟─542763c5-b1d7-4e3f-b972-990f1d14fe39
 # ╟─92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
 # ╟─00000000-0000-0000-0000-000000000001

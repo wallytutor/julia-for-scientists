@@ -22,7 +22,7 @@ Uma *tuple* é constituída de uma sequência de elementos, que podem ser de tip
 
 !!! note "Já vimos isso antes"
 
-	Voltando a seção aonde realizamos a conversão explícita de tipos acima, você pode verificar que na realidade já utilizamos uma tuple de números indicando as intensidades RGB de uma cor.
+    Voltando a seção aonde realizamos a conversão explícita de tipos acima, você pode verificar que na realidade já utilizamos uma tuple de números indicando as intensidades RGB de uma cor.
 
 Declaremos uma sequência fixa de linguagens de programação dadas por seus nomes como `Strings`:
 """
@@ -44,7 +44,7 @@ Os elementos de uma `Tuple` podem ser acessados por seus índices.
 
 !!! warning "Indices em Julia"
 
-	É o momento de mencionar que em Julia a indexação inicia com `1`.
+    É o momento de mencionar que em Julia a indexação inicia com `1`.
 """
 
 # ╔═╡ 29698a56-3627-46a2-9c5c-029b2f92b606
@@ -56,14 +56,14 @@ Vamos tentar modificar o segundo elemento da `Tuple`.
 
 !!! tip "Sintaxe de controle de erros"
 
-	Ainda é cedo para entrar nos detalhes, mas aproveite o bloco abaixo para ter um primeiro contato com a gestão de erros em Julia.
+    Ainda é cedo para entrar nos detalhes, mas aproveite o bloco abaixo para ter um primeiro contato com a gestão de erros em Julia.
 """
 
 # ╔═╡ e22b0b9e-813c-4528-aa09-d394c7d37da5
-try 
-	languages[2] = "C++"
+try
+    languages[2] = "C++"
 catch err
-	println("Erro: $(err)")
+    println("Erro: $(err)")
 end
 
 # ╔═╡ c3658afa-1a9b-4cd2-951c-234a6b37c8fe
@@ -73,30 +73,30 @@ Existem certas subtilidades que você precisa saber sobre a imutabilidade. Obser
 
 # ╔═╡ 0c29046a-2f4a-43b0-a670-2a2cfca22398
 begin
-	var1 = 1;
-	var2 = 2;
-	
-	test_tuple1 = (var1, var2);
-	
-	var1 = 5;
-	test_tuple1
+    var1 = 1
+    var2 = 2
+
+    test_tuple1 = (var1, var2)
+
+    var1 = 5
+    test_tuple1
 end
 
 # ╔═╡ 245b49a4-c880-4b6e-bc08-99d8494264d6
 md"""
 !!! danger "Isso nem sempre é verdade!"
 
-	Se o elemento compondo a `Tuple` for de um tipo mutável, como é o caso de `Array`'s, como veremos no que se segue, os elementos desta variável podem ser modificados e impactam a `Tuple` diretamente. Isso se dá porque neste caso a `Tuple` conserva a referência ao objeto em questão, e não uma cópia dos valores, como é o caso para tipos de base.
+    Se o elemento compondo a `Tuple` for de um tipo mutável, como é o caso de `Array`'s, como veremos no que se segue, os elementos desta variável podem ser modificados e impactam a `Tuple` diretamente. Isso se dá porque neste caso a `Tuple` conserva a referência ao objeto em questão, e não uma cópia dos valores, como é o caso para tipos de base.
 """
 
 # ╔═╡ bfc36ed8-9b17-4fbd-bea2-97141c2e83b8
 begin
-	var3 = [1, 2];
-	
-	test_tuple2 = (var1, var3);
-	
-	var3[1] = 999;
-	test_tuple2
+    var3 = [1, 2]
+
+    test_tuple2 = (var1, var3)
+
+    var3[1] = 999
+    test_tuple2
 end
 
 # ╔═╡ ce0750fd-ff28-4c77-9cd5-e99a6217d1ae
@@ -185,9 +185,9 @@ A tentativa de remover um elemento inexistente obviamente conduz à um erro:
 
 # ╔═╡ 883c21f5-7e99-4807-bd9d-108e3073e025
 try
-	pop!(organs, "leg")
+    pop!(organs, "leg")
 catch err
-	println("Erro: $(err)")
+    println("Erro: $(err)")
 end
 
 # ╔═╡ 930089df-128e-4993-902a-5611b5a6884b
@@ -226,8 +226,8 @@ Isso é tudo para esta sessão de estudo! Até a próxima!
 
 # ╔═╡ b9af06b7-88c7-40fe-8c0d-f2510c5ec36d
 begin
-	import PlutoUI
-	PlutoUI.TableOfContents(title="Tópicos")
+    import PlutoUI
+    PlutoUI.TableOfContents(title = "Tópicos")
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
