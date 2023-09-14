@@ -128,6 +128,11 @@ true || print("não será avaliado")
 # ╔═╡ c566aada-4eae-48d0-a59d-a691c060f163
 false || print("será avaliado")
 
+# ╔═╡ cfa4add3-4099-48f4-bdfc-f0d47116dcd6
+md"""
+## Funções e despacho múltiplo
+"""
+
 # ╔═╡ 0ed128d3-9a20-477d-8593-e79ebdfe78f2
 md"""
 ### Controle de excessões
@@ -155,11 +160,6 @@ try
 catch err
 	println("Error: $(err)")
 end
-
-# ╔═╡ cfa4add3-4099-48f4-bdfc-f0d47116dcd6
-md"""
-## Funções e despacho múltiplo
-"""
 
 # ╔═╡ 26cb00c5-d7d8-4823-bbf5-acaf3bb305c8
 md"""
@@ -497,20 +497,6 @@ kron(u', u)
 
 # ╔═╡ 3c4320db-fb39-4e39-8f7b-4b36b059e0c5
 cross(u, u)
-
-# ╔═╡ 1f62aeb7-a379-420c-9f35-1a91f0d34be7
-md"""
-## Expressões regulares
-"""
-
-# ╔═╡ 4108e7bd-519a-4614-86f4-3b32ba4933b6
-md"""
-## Execução concorrente
-
-## Leitura e escritura de arquivos
-
-## Metaprogramação
-"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -887,11 +873,11 @@ version = "17.4.0+0"
 # ╠═ce078faa-0f95-47b8-86a4-6aa9c2ddf578
 # ╠═7c8c5602-5477-46b2-acff-983275cd9120
 # ╠═c566aada-4eae-48d0-a59d-a691c060f163
+# ╟─cfa4add3-4099-48f4-bdfc-f0d47116dcd6
 # ╟─0ed128d3-9a20-477d-8593-e79ebdfe78f2
 # ╠═d3a72eb2-4fb1-4d57-8212-905d1f5ffc03
 # ╠═b71637f1-4fa3-4d76-90cc-4b046eefae6f
 # ╠═6fa6185b-dd36-4ee9-8e00-46332c88dc8c
-# ╟─cfa4add3-4099-48f4-bdfc-f0d47116dcd6
 # ╟─26cb00c5-d7d8-4823-bbf5-acaf3bb305c8
 # ╠═ce9c9473-6588-48a0-8ebe-f67f0cf8132f
 # ╠═0ea91607-b465-4956-97ec-2401f802b8d0
@@ -984,7 +970,5 @@ version = "17.4.0+0"
 # ╠═fb44687c-4e14-4b4d-84a9-2a2f13708d26
 # ╠═b33bea47-01bc-4ac0-b8b2-cc2a10681bb8
 # ╠═3c4320db-fb39-4e39-8f7b-4b36b059e0c5
-# ╟─1f62aeb7-a379-420c-9f35-1a91f0d34be7
-# ╟─4108e7bd-519a-4614-86f4-3b32ba4933b6
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
