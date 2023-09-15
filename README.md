@@ -56,6 +56,7 @@ aqui resumidos.
 - Equações diferenciais parciais
 - Redes neuronais clássicas
 - Aprendizado com suporte físico
+- Análise quantitativa de imagens
 - Criando seus próprios pacotes
 - ...
 
