@@ -30,7 +30,7 @@ html"""
     <h2>Materiais suplementares</h2>
     <ol>
       <li>
-        <a href="#" target="_blank">Ciência colaborativa</a>
+        <a href="a01-colaboracao-cientifica.html" target="_blank">Ciência colaborativa</a>
       </li>
     </ol>
   </div>

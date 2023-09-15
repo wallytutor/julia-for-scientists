@@ -14,57 +14,50 @@ Uma dificuldade recorrente encontrada em projetos científicos contendo uma comp
 # ╔═╡ d542189a-352e-42ef-a444-e508ae48e6a8
 md"""
 ## Ferramentas recomendadas
+
+Para estudar aspectos computacionais em ciência você precisa de alguns componentes de suporte à linguagem de programação usada, em nosso caso Julia. No que se segue vamos apresentar:
+
+- O editor de texto recomendado VS Code e a extensão requerida.
+- A linguagem ``\LaTeX`` usada para a entrada de equações nos notebooks e artigos.
+- As ferramentas necessárias para editar ``\LaTeX`` fora do contexto de Julia.
+- E finalmente o sistema de versionagem Git.
 """
 
 # ╔═╡ 507d8f92-63dc-42a6-b746-ee642fe51add
 md"""
 ### VS Code
 
-[VSCode](https://code.visualstudio.com/) has become the most popular code
-editor in the last few years. Here we recommend its usage for providing a
-graphical interface for Git *commits* and *pushes*, what can be nontrivial
-for beginners. It can also be useful for modifying the GNUPlot or Python
-scripts for producing publication-quality plots.
-"""
-
-# ╔═╡ 31afad0d-a16e-475e-9568-c8f964bfbba0
-md"""
-### Git
-
-[Git](https://git-scm.com/downloads) is a version control software mainly
-used in software engineering but it proves very useful for scientific papers
-if using LaTeX. The power of the tool is to allow for text comparison and
-storage of many versions in the same place.
+Nos últimos anos [VSCode](https://code.visualstudio.com/) se tornou o editor mais popular da comunidade *open source* e com toda razão. A qualidade da ferramenta provida pela Microsoft chegou a um nível que é difícil justificar o uso de um editor de código comercial. Aliado a isso, com a extensão [Julia VSCode](https://www.julia-vscode.org/) um suporte avançado a edição de código e documentação da linguagem é disponível. Além disso, a ferramenta provê [integração com o sistema de controle de versões Git](https://code.visualstudio.com/docs/sourcecontrol/overview) que vamos discutir no que se segue.
 """
 
 # ╔═╡ b0ee7807-239c-4e29-bbfc-c492225ff726
 md"""
 ### ``\LaTeX``
 
-[LaTeX (MiKTeX)](https://miktex.org/) is a typesetting system for scientific
-writing. It is a required tool for any serious mathematical typing and its
-format is accepted by most scientific publishers. The version refered in this
-link is for Windows users, those on Unix-based systems generally not requiring
-this introduction.
+Para a entrada de equações nos notebooks, [Julia markdown](https://docs.julialang.org/en/v1/stdlib/Markdown/) provê suporte à renderização de ``\LaTeX``. É fundamental ter algum domínio desta linguagem para a elaborção de documentos científicos. As distribuições mais populares são [MiKTeX](https://miktex.org/) para Windows e [TeX Live](https://tug.org/texlive/) para os demais sistemas operacionais. Ademais, artigos escritos usando a linguagem são aceitos pelas publicações mais relevantes em várias áreas do conhecimento. Outra razão para o uso de ``\LaTeX`` é a estocagem de documentos em formato de texto bruto, o que permite um controle de versões com Git.
 """
 
 # ╔═╡ 6abb1126-5154-4f96-8c1f-a9f23e8f2e71
 md"""
 ### TeXStudio
 
-[TeXStudio](https://www.texstudio.org/) is probably the most feature-rich
-open source LaTeX editor. It is necessary to generate PDF's from LaTeX sources
-in a easy way without the command line.
+Em complemento à distribuição de ``\LaTeX`` é necessário um editor de texto adaptado. Embora existam extensões excelentes para realizar a compilação dos documentos [^1] para VS Code, elas não são muito fáceis de se compreender para um iniciante. Por isso recomendamos [TeXStudio](https://www.texstudio.org/) para editar e compilar documentos escritos em ``\LaTeX``.
+
+[^1]: Por compilação entende-se em nossos dias transformar o documento em PDF.
 """
 
 # ╔═╡ 29d9dcf5-e584-4a94-b4de-3aecb1efe5b6
 md"""
 ### JabRef
 
-[JabRef](https://www.jabref.org/) is a bibliography manager for generating
-*.bib* files required by BibTeX for inserting literature references in LaTeX.
-It also allows for search of similar articles, what is quite interesting when
-starting a new research.
+Embora as referências bibliográficas possam ser inseridas diretamente em documentos ``\LaTeX``, o ideal é utilizar uma base de dados comum que possa ser reutilizada ao longo da carreira de pesquisa. [JabRef](https://www.jabref.org/) é um gestor de bibliografia para o formato ``BibTeX`` suportado por ``\LaTeX`` que estoca dados diretamente em formato textual. A interface gráfica é fácil de interagir e dado o formato de documento, as bases *.bib* são compatíveis com Git. 
+"""
+
+# ╔═╡ 31afad0d-a16e-475e-9568-c8f964bfbba0
+md"""
+### Git
+
+Falamos bastante em [Git](https://git-scm.com/downloads) até o momento sem entrar em mais detalhes de que é uma ferramenta de controle de versões. Git elimina a prática insana de se salvar manualmente várias cópias de um mesmo documento para gerir versões. O sistema basea-se na comparação de conteúdos e propõe de se salvar unicamente os documentos modificados em um projeto. Embora seu uso básico seja bastante simples e plausível de se aprender em uma tarde de estudo, a ferramenta é bastante complexa e complexa, permitindo de voltar em pontos históricos de um projeto, publicar *releases*, etc. Para uma pesquisa sã e durável, o uso de documentos em formatos aceitando texto bruto em conjunto com Git é ideal.
 """
 
 # ╔═╡ 872efb8d-b5a9-46c7-b790-b8f4932b26b7
@@ -76,48 +69,14 @@ md"""
 md"""
 ### Python
 
-[Python (Anaconda)](https://www.anaconda.com/products/individual) is a
-general purpose programming language that has become the most used language
-in the world. It has become particularly popular in scientific community due
-to its steep learning curve and the availability of scientific packages.
+Embora esse seja um curso de Julia, é importante que o cientista também tenha conhecimento de [Python](https://www.python.org/). Python é uma linguagem generalista que também é bastante rica em termos de pacotes para aplicações científicas. Em termos de aprendizado é relativamente mais simples que Julia, com o porém que código nativo em Python é extremamente lento, requerindo sempre o uso de bibliotecas que na verdade são implementadas em C, Fortran, Rust, etc. Para a concepção de aplicações web especialmente a linguagem encontra-se num estado de maturidade bastante superior à Julia e não deve ser negligenciada. Ademais, encontra-se entre as linguagens mais utilizadas no mundo, enquanto Julia é uma linguagem de nicho.
 """
 
 # ╔═╡ 2c60e69c-63ed-463f-b2d1-5ffd91942e80
 md"""
 ### GNUPlot
 
-[GNUPlot](http://www.gnuplot.info/) is an open source plotting tool with
-advanced features for producing good quality figures for scientific papers.
-Although more difficult to learn than Python scripting, generally the plots
-produced with this tool are of superior quality.
-"""
-
-# ╔═╡ 04221d62-b8ac-4404-b0b3-6af4aa98ce4c
-md"""
-## Colaboração com Git
-
-- Copy the address as indicated in the picture below:
-
-![Address of repository](./media/git-address.png)
-
-- *Clone* this repository with VSCode in your computer as indicated
-[here](https://code.visualstudio.com/docs/editor/versioncontrol#_cloning-a-repository).
-Notice that cloning is not the same as downloading the zip (rightmost button in the
-image above) because it will get the *.git* repository for version control and
-possibly some other special files required for control.
-
-- Using TeXStudio, open the LaTeX files of the paper being edited and perform
-the desired modifications. You might also add new references (if available
-using the DOI) with JabRef or modify/create figures with GNUPlot or Python.
-Once you are done, *commit* your modifications as explained
-[here](https://code.visualstudio.com/docs/editor/versioncontrol#_commit).
-Here comes the great advantage of Git for scientific publishing: you will no
-longer store copies of your versions, but instead will *commit* the changes,
-letting the task of keeping track of modifications to Git. After commiting,
-consider *pushing* the modifications to the repository, so co-authors can
-*pull* the latest versions for work on their side. Consider reading the
-full [page](https://code.visualstudio.com/docs/editor/versioncontrol#_git-support)
-for Git suppport in VSCode.
+Embora tratemos da temática de gráficos para publicações no curso, uma alternativa sempre é interessante. [GNUPlot](http://www.gnuplot.info/) é uma ferramenta *open source* contando com sua própria linguagem para geração de gráficos. É uma ferramenta interessante principalmente quando se deseja padronizar todas as figuras em um projeto através de arquivos de configuração.
 """
 
 # ╔═╡ 66e395aa-900e-48bd-9f95-f535612ae513
@@ -401,14 +360,13 @@ version = "17.4.0+0"
 # ╟─61b0c450-53b3-11ee-1e8b-c709c9aa1e5e
 # ╟─d542189a-352e-42ef-a444-e508ae48e6a8
 # ╟─507d8f92-63dc-42a6-b746-ee642fe51add
-# ╟─31afad0d-a16e-475e-9568-c8f964bfbba0
 # ╟─b0ee7807-239c-4e29-bbfc-c492225ff726
 # ╟─6abb1126-5154-4f96-8c1f-a9f23e8f2e71
 # ╟─29d9dcf5-e584-4a94-b4de-3aecb1efe5b6
+# ╟─31afad0d-a16e-475e-9568-c8f964bfbba0
 # ╟─872efb8d-b5a9-46c7-b790-b8f4932b26b7
 # ╟─8a90084c-db27-45ad-b07c-6f8495c91cab
 # ╟─2c60e69c-63ed-463f-b2d1-5ffd91942e80
-# ╟─04221d62-b8ac-4404-b0b3-6af4aa98ce4c
 # ╟─66e395aa-900e-48bd-9f95-f535612ae513
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
