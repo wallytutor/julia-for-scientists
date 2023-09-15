@@ -4,10 +4,15 @@ Julia *from zero to hero* com uma abordagem para computação científica.
 
 ## Antes de começar
 
+1. Ler [este anexo](tutorials/a01-colaboracao-cientifica.jl) para se
+    familiarizar com alguns elementos que vamos abordar no que se segue.
+
 1. [Instalar Julia](https://julialang.org/downloads/) na versão
     estável para seu sistema operacional.
+
 1. [Instalar Pluto](https://github.com/fonsp/Pluto.jl) para
     visualizar e editar os notebooks do curso.
+
 1. Clonar este repositório com todos os materiais usando a seguinte
     ordem de prioridade:
 
@@ -22,6 +27,13 @@ localmente, o que não é recomendável. Para estudantes ainda não familiarizad
 *git*, a opção de utilizar GitHub Desktop é a mais apropriada.
 
 ## Como seguir os materiais
+
+- Os conteúdos são majoritariamente sequenciais: exceto para os tópicos mais
+    avançados (para aqueles que já programam em Julia), é necessário seguir
+    os notebooks na ordem provida.
+
+- Um canal YouTube do curso está em fase de concepção para abordar os detalhes
+    entre-linhas, involvendo aspectos que não necessariamente estão escritos.
 
 ## Conteúdos
 
