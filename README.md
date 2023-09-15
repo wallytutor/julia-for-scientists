@@ -26,17 +26,18 @@ localmente, o que não é recomendável. Para estudantes ainda não familiarizad
 ## Conteúdos
 
 Abaixo você encontra a lista de conteúdos disponíveis e planejados.
-Na lista principal econtram-se os conteúdos deste repositório, os
-quais se manifestam com um link para o arquivo caso já disponível.
-As sub-listas de cada tópico apresentam links externos que julgo
-interessante para ir mais longe no aprendizado ou que foram utilizados
-como referências para os conteúdos aqui resumidos.
+Na lista com indentação principal econtram-se os conteúdos deste
+repositório, os quais se manifestam com um link em *itálico* para os
+arquivos caso já disponíveis. As sub-listas de cada tópico apresentam
+links externos que julgo interessante para ir mais longe no aprendizado
+ou simplesmente que foram utilizados como referências para os conteúdos
+aqui resumidos.
 
-- [Preâmbulo e Pluto](tutorials/000-preambulo-e-pluto.jl)
-- [Primeiros passos](tutorials/001-primeiros-passos.jl)
-- [Manipulação textual](tutorials/002-manipulacao-textual.jl)
-- [Estruturas de dados I](tutorials/003-estruturas-de-dados.jl)
-- [Estruturas de dados II](tutorials/004-estruturas-de-dados.jl)
+- [*Preâmbulo e Pluto*](tutorials/000-preambulo-e-pluto.jl)
+- [*Primeiros passos*](tutorials/001-primeiros-passos.jl)
+- [*Manipulação textual*](tutorials/002-manipulacao-textual.jl)
+- [*Estruturas de dados I*](tutorials/003-estruturas-de-dados.jl)
+- [*Estruturas de dados II*](tutorials/004-estruturas-de-dados.jl)
 - [Laços e conditionais](tutorials/005-lacos-e-condicionais.jl)
 - [Funções e despacho múltiplo](tutorials/006-funcoes-e-despacho.jl)
 - [Pacotes e ecossistema](tutorials/007-pacotes-e-ecossistema.jl)
@@ -45,12 +46,12 @@ como referências para os conteúdos aqui resumidos.
 - [Expressões regulares](tutorials/010-expressoes-regulares.jl)
 - [Execução concorrente](tutorials/011-execucao-concorrente.jl)
 - [Trabalhando com arquivos](tutorials/012-trabalhando-com-arquivos.jl)
-- ...
-- Gráficos para publicações
-- Criando novos tipos de dados
-- Metaprogramação e macros
+- [Bibliotecas gráficas](tutorials/013-bibliotecas-graficas.jl)
+- [Gráficos para publicações](tutorials/014-graficos-para-publicacoes.jl)
+- [Tipos de dados e estruturas](tutorials/015-tipos-de-dados-e-estruturas.jl)
+- [Metaprogramação e macros](tutorials/016-metaprogramacao-e-macros.jl)
   - [Workshop - JuliaCon 2021](https://www.youtube.com/watch?v=2QLhw6LVaq0&t=3275s)
-- Usando bibliotecas externas
+- [Interoperação com C](tutorials/017-interoperacao-com-c.jl)
 - Equações diferenciais ordinárias
 - Equações diferenciais parciais
 - Redes neuronais clássicas
