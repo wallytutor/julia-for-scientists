@@ -35,6 +35,10 @@ localmente, o que não é recomendável. Para estudantes ainda não familiarizad
 - Um canal YouTube do curso está em fase de concepção para abordar os detalhes
     entre-linhas, involvendo aspectos que não necessariamente estão escritos.
 
+- Graças à GitHub Pages este curso encontra-se publicado
+    [aqui](https://wallytutor.github.io/julia-for-scientists/) e esta é a forma
+    optimizada de consultar os materiais sem necessariamente executá-los.
+
 ## Conteúdos
 
 Abaixo você encontra a lista de conteúdos disponíveis e planejados.
