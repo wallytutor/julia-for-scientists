@@ -2,6 +2,10 @@
 
 Julia *from zero to hero* com uma abordagem para computação científica.
 
+Toda e qualquer dúvida será respondida através de meu [Zulip Chat](https://wallytutor.zulipchat.com).
+Também preconizo sugestões por aquele canal. Caso encontre erros conceituais ou
+nos programas / tutorials, serei grato pela criação de uma *issue* aqui no GitHub.
+
 ## Antes de começar
 
 1. Ler [este anexo](tutorials/a01-colaboracao-cientifica.jl) para se
