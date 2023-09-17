@@ -9,7 +9,7 @@ begin
     import Pkg
     Pkg.activate(Base.current_project())
     Pkg.instantiate()
-    
+
     import PlutoUI
     PlutoUI.TableOfContents(title = "Tópicos")
 end

@@ -358,7 +358,7 @@ Abaixo calculamos a diferença de tempo entre os dois processos e nos deparamos 
 time_diff = (without_conversion - with_conversion)
 
 # ╔═╡ 4b0564fb-5d3b-4796-ae7d-ad0bcac69b1b
-time_diff_per_element = time_diff ./ [10^k for k in 0:4]
+time_diff_per_element = time_diff ./ [10^k for k = 0:4]
 
 # ╔═╡ 07cb0ba2-3328-4ec2-8263-9aea918c411b
 md"""
