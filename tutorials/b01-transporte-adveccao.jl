@@ -6,6 +6,10 @@ using InteractiveUtils
 
 # ╔═╡ 20d1d250-25ee-11ee-0d93-7374b5a110ac
 begin
+    import Pkg
+    Pkg.activate(Base.current_project())
+    Pkg.instantiate()
+
     using Plots;
     using Printf;
     using Unitful;

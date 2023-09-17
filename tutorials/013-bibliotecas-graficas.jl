@@ -11,6 +11,10 @@ md"""
 
 # ╔═╡ 78a17907-82bd-40c0-9c11-96ff0ebb71b5
 begin
+    import Pkg
+    Pkg.activate(Base.current_project())
+    Pkg.instantiate()
+
     import CairoMakie
     import Gadfly
     import Plots

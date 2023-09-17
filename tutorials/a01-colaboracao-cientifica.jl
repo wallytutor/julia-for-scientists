@@ -81,6 +81,10 @@ Embora tratemos da temática de gráficos para publicações no curso, uma alter
 
 # ╔═╡ 66e395aa-900e-48bd-9f95-f535612ae513
 begin
+    import Pkg
+    Pkg.activate(Base.current_project())
+    Pkg.instantiate()
+
     import PlutoUI
     PlutoUI.TableOfContents(title="Tópicos")
 end

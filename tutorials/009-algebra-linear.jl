@@ -99,6 +99,10 @@ Isso é tudo para esta sessão de estudo! Até a próxima!
 
 # ╔═╡ 92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
 begin
+    import Pkg
+    Pkg.activate(Base.current_project())
+    Pkg.instantiate()
+
     import PlutoUI
     PlutoUI.TableOfContents(title="Tópicos")
 end
