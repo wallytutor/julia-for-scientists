@@ -58,7 +58,7 @@ Para todos os materiais já publicados consulte a página do curso
 - [*Manipulação textual*](tutorials/002-manipulacao-textual.jl)
 - [*Estruturas de dados I*](tutorials/003-estruturas-de-dados.jl)
 - [*Estruturas de dados II*](tutorials/004-estruturas-de-dados.jl)
-- [Laços e conditionais](tutorials/005-lacos-e-condicionais.jl)
+- [Laços e condicionais](tutorials/005-lacos-e-condicionais.jl)
 - [Funções e despacho múltiplo](tutorials/006-funcoes-e-despacho.jl)
 - [Pacotes e ecossistema](tutorials/007-pacotes-e-ecossistema.jl)
 - [Avaliando performance](tutorials/008-avaliando-performance.jl)
