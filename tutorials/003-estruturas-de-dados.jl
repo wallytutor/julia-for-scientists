@@ -72,14 +72,14 @@ Existem certas subtilidades que você precisa saber sobre a imutabilidade. Obser
 """
 
 # ╔═╡ 0c29046a-2f4a-43b0-a670-2a2cfca22398
-begin
-    var1 = 1
-    var2 = 2
+let
+    a = 1
+    b = 2
 
-    test_tuple1 = (var1, var2)
+    test_tuple = (a, b)
 
-    var1 = 5
-    test_tuple1
+    a = 5
+    test_tuple
 end
 
 # ╔═╡ 245b49a4-c880-4b6e-bc08-99d8494264d6
@@ -90,13 +90,14 @@ md"""
 """
 
 # ╔═╡ bfc36ed8-9b17-4fbd-bea2-97141c2e83b8
-begin
-    var3 = [1, 2]
+let
+    a = 1
+    b = [1, 2]
 
-    test_tuple2 = (var1, var3)
+    test_tuple = (a, b)
 
-    var3[1] = 999
-    test_tuple2
+    b[1] = 999
+    test_tuple
 end
 
 # ╔═╡ ce0750fd-ff28-4c77-9cd5-e99a6217d1ae
@@ -161,7 +162,7 @@ organs["eyes"] = "👀"
 
 # ╔═╡ 039ea029-bcc5-4b99-83f8-de9d205c8a76
 md"""
-Internamente para evitar nova alocação de memória a cada tentativa de se adicionar um novo elemento, um dicionário realiza a alocação de `slots` que são renovados cada vez que sua capacidade é ultrapassada. Observe que a lista retornada abaixo é composta majoritariamente de `0x00`, que é o endereço de memória nulo, enquanto 3 elementos indicam um valor não-nulo, correspondendo aos elementos já adicionados ao dicionário. Disto vemos que adicionalmente um dicionário não preserva necessariamente uma sequência ordenada. Esses detalhes ultrapassam o presente escopo mas vão abrindo as portas para assuntos mais complexos. 
+Internamente para evitar nova alocação de memória a cada tentativa de se adicionar um novo elemento, um dicionário realiza a alocação de `slots` que são renovados cada vez que sua capacidade é ultrapassada. Observe que a lista retornada abaixo é composta majoritariamente de `0x00`, que é o endereço de memória nulo, enquanto 3 elementos indicam um valor não-nulo, correspondendo aos elementos já adicionados ao dicionário. Disto vemos que adicionalmente um dicionário não preserva necessariamente uma sequência ordenada. Esses detalhes ultrapassam o presente escopo mas vão abrindo as portas para assuntos mais complexos.
 """
 
 # ╔═╡ 0ef39afb-9727-4d0e-a803-aaa7be1c0478
