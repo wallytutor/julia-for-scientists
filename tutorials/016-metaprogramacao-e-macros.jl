@@ -12,6 +12,8 @@ md"""
 # ╔═╡ d0cba36d-01b0-425d-9677-dd188cedbd04
 md"""
 ## Seção
+
+[Workshop - JuliaCon 2021](https://www.youtube.com/watch?v=2QLhw6LVaq0&t=3275s)
 """
 
 # ╔═╡ e4428ffe-6180-4145-bed6-08ca5bd2f179

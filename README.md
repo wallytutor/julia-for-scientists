@@ -2,9 +2,9 @@
 
 Julia *from zero to hero* com uma abordagem para computação científica.
 
-Toda e qualquer dúvida será respondida através de meu [Zulip Chat](https://wallytutor.zulipchat.com).
-Também preconizo sugestões por aquele canal. Caso encontre erros conceituais ou
-nos programas / tutorials, serei grato pela criação de uma *issue* aqui no GitHub.
+- Conteúdo finalizado: [aqui](https://wallytutor.github.io/julia-for-scientists/).
+- Dúvidas e sugestões: [Zulip Chat](https://wallytutor.zulipchat.com).
+- Correções: crie uma [issue](https://github.com/wallytutor/julia-for-scientists/issues/new).
 
 ## Antes de começar
 
@@ -42,43 +42,6 @@ localmente, o que não é recomendável. Para estudantes ainda não familiarizad
 - Graças à GitHub Pages este curso encontra-se publicado
     [aqui](https://wallytutor.github.io/julia-for-scientists/) e esta é a forma
     optimizada de consultar os materiais sem necessariamente executá-los.
-
-## Conteúdos
-
-Abaixo você encontra a lista de conteúdos disponíveis e planejados.
-Na lista com indentação principal econtram-se os conteúdos deste
-repositório. As sub-listas de cada tópico apresentam links externos
-que julgo interessante para ir mais longe no aprendizado ou simplesmente
-que foram utilizados como referências para os conteúdos aqui resumidos.
-Para todos os materiais já publicados consulte a página do curso
-[aqui](https://wallytutor.github.io/julia-for-scientists/).
-
-- [*Preâmbulo e Pluto*](tutorials/000-preambulo-e-pluto.jl)
-- [*Primeiros passos*](tutorials/001-primeiros-passos.jl)
-- [*Manipulação textual*](tutorials/002-manipulacao-textual.jl)
-- [*Estruturas de dados I*](tutorials/003-estruturas-de-dados.jl)
-- [*Estruturas de dados II*](tutorials/004-estruturas-de-dados.jl)
-- [Laços e condicionais](tutorials/005-lacos-e-condicionais.jl)
-- [Funções e despacho múltiplo](tutorials/006-funcoes-e-despacho.jl)
-- [Pacotes e ecossistema](tutorials/007-pacotes-e-ecossistema.jl)
-- [Avaliando performance](tutorials/008-avaliando-performance.jl)
-- [Álgebra linear](tutorials/009-algebra-linear.jl)
-- [Expressões regulares](tutorials/010-expressoes-regulares.jl)
-- [Execução concorrente](tutorials/011-execucao-concorrente.jl)
-- [Trabalhando com arquivos](tutorials/012-trabalhando-com-arquivos.jl)
-- [Bibliotecas gráficas](tutorials/013-bibliotecas-graficas.jl)
-- [Gráficos para publicações](tutorials/014-graficos-para-publicacoes.jl)
-- [Tipos de dados e estruturas](tutorials/015-tipos-de-dados-e-estruturas.jl)
-- [Metaprogramação e macros](tutorials/016-metaprogramacao-e-macros.jl)
-  - [Workshop - JuliaCon 2021](https://www.youtube.com/watch?v=2QLhw6LVaq0&t=3275s)
-- [Interoperação com C](tutorials/017-interoperacao-com-c.jl)
-- Equações diferenciais ordinárias
-- Equações diferenciais parciais
-- Redes neuronais clássicas
-- Aprendizado com suporte físico
-- Análise quantitativa de imagens
-- Criando seus próprios pacotes
-- ...
 
 ## Para aonde ir depois?
 
