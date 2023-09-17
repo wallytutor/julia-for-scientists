@@ -208,46 +208,55 @@ end
 # ╔═╡ 417adb28-3380-44e1-a393-285256b4d6d9
 md"""
 ## Exemplos com matrizes
+
+Nesta seção vamos ilustrar algumas variantes do uso de laços usando matrizes. Comecemos criando uma matrix densa de dimensões `nrows` linhas e `ncols` colunas. Uma maneira de se alocar a memória necessária é com a função `fill` como se segue. Alternativamente poderíamos usar `zeros(Int64, (nrows, ncols))` como o mesmo resultado aqui.
 """
 
 # ╔═╡ 6d100024-12fd-472a-a054-ca839bd746f6
 begin
     nrows = 3
     ncols = 4
-
     A = fill(0, (nrows, ncols))
 end
 
+# ╔═╡ c7b18cf3-d1e5-4c99-882c-e87f7c2bda86
+md"""
+Vamos agora trabalhar para que cada elemento da matriz seja igual a soma do seus índices de linha e coluna, ou seja, ``a_{ij} = i + j``. Não citamos anteriormente, mais laços podem ser imbricados. Para ilustar, abaixo escrevemos um laço que itera sobre os índices `j` das colunas e no seu interior outro que avança `i` sobre as linhas.
+
+Como vemos no resultado da execução o laço opera da seguinte maneira: fixa-se um valor de `j`, então se acessa o laço interno sobre `i` o qual toma todos os valores possíveis sequencialmente, então se avança o laço externo.
+"""
+
 # ╔═╡ 270c3239-209c-4b57-83d7-275896d977b5
-begin
+let
     for j in 1:ncols
         for i in 1:nrows
             A[i, j] = i + j
+            println("A[$(i), $(j)] = $(A[i, j])")
         end
     end
-
     A
 end
 
+# ╔═╡ 4ce872a9-d435-47d6-a6fe-7cfe16be6e8d
+md"""
+As ideias por trás da sintaxe acima não são exclusivas de Julia, laços similares sendo encontrados em grande parte das linguagens de programação. Uma especificidade de Julia é a possibilidade de se escrever de maneira mais compacta os laços acima como:
+"""
+
 # ╔═╡ e4428ffe-6180-4145-bed6-08ca5bd2f179
-begin
-    B = fill(0, (nrows, ncols))
-
+let
     for j in 1:ncols, i in 1:nrows
-        B[i, j] = i + j
+        A[i, j] = i + j
     end
-
-    B
+    A
 end
 
+# ╔═╡ 0d333c12-d1e6-415f-a059-84e701ae722d
+md"""
+Essa sintaxe sucinta aliada ao conceito de *comprehensions* permite se criar uma matriz `B` identica a `A` em uma linha:
+"""
+
 # ╔═╡ 95114075-a01d-431a-8a28-1201768abb95
-b = [α^β for α in 1:5, β in 2:5]
-
-# ╔═╡ 34934ccd-4579-4294-ab25-352912b97529
-length(b)
-
-# ╔═╡ 5bc0ea13-d51d-4219-bfe4-a9cbf255c79e
-sum(1:10)
+B = [i + j for i in 1:nrows, j in 1:ncols]
 
 # ╔═╡ 8efe6053-a499-4967-a807-79a40fad994e
 md"""
@@ -316,11 +325,12 @@ Isso é tudo para esta sessão de estudo! Até a próxima!
 # ╠═b6bfb58d-eebe-45ec-ad97-5b3551649699
 # ╟─417adb28-3380-44e1-a393-285256b4d6d9
 # ╠═6d100024-12fd-472a-a054-ca839bd746f6
+# ╟─c7b18cf3-d1e5-4c99-882c-e87f7c2bda86
 # ╠═270c3239-209c-4b57-83d7-275896d977b5
+# ╟─4ce872a9-d435-47d6-a6fe-7cfe16be6e8d
 # ╠═e4428ffe-6180-4145-bed6-08ca5bd2f179
+# ╟─0d333c12-d1e6-415f-a059-84e701ae722d
 # ╠═95114075-a01d-431a-8a28-1201768abb95
-# ╠═34934ccd-4579-4294-ab25-352912b97529
-# ╠═5bc0ea13-d51d-4219-bfe4-a9cbf255c79e
 # ╟─8efe6053-a499-4967-a807-79a40fad994e
 # ╠═6ee8f21c-80c2-4807-adf8-adb0cba2c6ad
 # ╠═e096e80a-c111-498a-b956-e69539d5c84a
