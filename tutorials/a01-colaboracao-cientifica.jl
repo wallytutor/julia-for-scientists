@@ -77,6 +77,8 @@ md"""
 ### GNUPlot
 
 Embora tratemos da temática de gráficos para publicações no curso, uma alternativa sempre é interessante. [GNUPlot](http://www.gnuplot.info/) é uma ferramenta *open source* contando com sua própria linguagem para geração de gráficos. É uma ferramenta interessante principalmente quando se deseja padronizar todas as figuras em um projeto através de arquivos de configuração.
+
+[Voltar aos conteúdos](https://wallytutor.github.io/julia-for-scientists/)
 """
 
 # ╔═╡ 66e395aa-900e-48bd-9f95-f535612ae513

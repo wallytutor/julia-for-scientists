@@ -370,6 +370,8 @@ Ainda falta muito para se concluir a introdução à atribuição de tipos, mas 
 # ╔═╡ 542763c5-b1d7-4e3f-b972-990f1d14fe39
 md"""
 Isso é tudo para esta sessão de estudo! Até a próxima!
+
+[Voltar aos conteúdos](https://wallytutor.github.io/julia-for-scientists/)
 """
 
 # ╔═╡ Cell order:

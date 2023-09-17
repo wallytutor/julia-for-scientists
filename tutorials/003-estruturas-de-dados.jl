@@ -233,6 +233,8 @@ md"""
 Ainda nos restam alguns detalhes e tipos de dados, mas o tutorial começa a ficar longo... e não queremos te perder por aqui!
 
 Isso é tudo para esta sessão de estudo! Até a próxima!
+
+[Voltar aos conteúdos](https://wallytutor.github.io/julia-for-scientists/)
 """
 
 # ╔═╡ Cell order:
