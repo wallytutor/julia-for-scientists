@@ -47,11 +47,11 @@ localmente, o que não é recomendável. Para estudantes ainda não familiarizad
 
 Abaixo você encontra a lista de conteúdos disponíveis e planejados.
 Na lista com indentação principal econtram-se os conteúdos deste
-repositório, os quais se manifestam com um link em *itálico* para os
-arquivos caso já disponíveis. As sub-listas de cada tópico apresentam
-links externos que julgo interessante para ir mais longe no aprendizado
-ou simplesmente que foram utilizados como referências para os conteúdos
-aqui resumidos.
+repositório. As sub-listas de cada tópico apresentam links externos
+que julgo interessante para ir mais longe no aprendizado ou simplesmente
+que foram utilizados como referências para os conteúdos aqui resumidos.
+Para todos os materiais já publicados consulte a página do curso
+[aqui](https://wallytutor.github.io/julia-for-scientists/).
 
 - [*Preâmbulo e Pluto*](tutorials/000-preambulo-e-pluto.jl)
 - [*Primeiros passos*](tutorials/001-primeiros-passos.jl)
