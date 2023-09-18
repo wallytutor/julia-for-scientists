@@ -217,16 +217,22 @@ end
 function computehtc(c; method = :g)
     Pr = c.Pr
     Re = condition_ReD(c)
-    Nug = gnielinski_Nu(Re, Pr)
-    Nud = dittusboelter_Nu(Re, Pr, c.L, 2*c.R)
-    Nu = (method == :g) ? Nug : Nub
-    h = Nu * c.k / c.L
+    Nu = 3.66
+
+    if Re > 3000
+        Nug = gnielinski_Nu(Re, Pr)
+        Nud = dittusboelter_Nu(Re, Pr, c.L, 2*c.R)
+        Nu = (method == :g) ? Nug : Nub
+    end
+
+    h = Nu * c.k / (2c.R)
 
     println("""\
         Reynolds ................... $(Re)
         Nusselt (Gnielinsk) ........ $(Nug)
         Nusselt (Dittus-Boelter) ... $(Nud)
-        h .......................... $(h)\
+        Nusselt (usado aqui) ....... $(Nu)
+        h .......................... $(h) W/(m².K)\
         """
     )
 
@@ -234,30 +240,30 @@ function computehtc(c; method = :g)
 end
 
 # ╔═╡ 18173d9d-c877-4115-9839-a2db6da464c4
-begin
+fig = let
     c = Conditions()
     ĥ = computehtc(c)
 
     fig, ax = reactorplot(; L = c.L)
 
-    for N in [10, 20, 50, 100]
+    for N in [5, 50, 500]
         c.N = N
         δ = c.L / c.N
 
         Aᵥ = π * c.R^2
-        Aₛ = 2 * π * c.R * δ
+        Aₛ = 2π * c.R * δ
 
         a₁ = c.ρ * c.u * Aᵥ * c.cₚ
         a₂ = ĥ * Aₛ
 
-        A⁺ = a₁ + a₂ / 2
-        A⁻ = a₁ - a₂ / 2
+        A⁺ = a₁ + 0.5a₂
+        A⁻ = a₁ - 0.5a₂
 
         C₁ = a₂ * c.Tₛ
-        C₂ = C₁ + 2 * A⁻ * c.Tₚ
+        C₂ = C₁ + 2A⁻ * c.Tₚ
 
         d₀ = A⁺ * ones(c.N)
-        d₀[1] = 2 * a₁
+        d₀[1] = 2a₁
 
         d₁ = -A⁻ * ones(c.N - 1)
 
@@ -265,28 +271,32 @@ begin
         C[1] = C₂
 
         M = spdiagm(0 => d₀, -1 => d₁)
-
         T = M \ C
-        z = cellcenters(c.L, δ)
 
-        lines!(ax, z, T, label = "N = $(c.N)")
+        z = cellwalls(c.L, δ)[1:end-1]
+        stairs!(ax, z, T, label = "N = $(c.N)", step = :post)
     end
 
-    # ylims!(ax, (290, 300))
+    ax.yticks = range(300, 400, 6)
+    ylims!(ax, (300, 400))
     axislegend(position = :rb)
     fig
-end
+end;
+
+# ╔═╡ 2a5c963b-80c4-4f31-a997-542cef9a2f03
+fig
 
 # ╔═╡ Cell order:
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
 # ╟─67460379-cf1d-43b2-8a89-c34e83d2bdb9
 # ╟─53f1cba1-130f-4bb2-bf64-5e948b38b2c7
 # ╠═18173d9d-c877-4115-9839-a2db6da464c4
+# ╟─2a5c963b-80c4-4f31-a997-542cef9a2f03
 # ╟─7c43c2e5-98da-4e35-8f06-1a301f02cfec
 # ╠═e4428ffe-6180-4145-bed6-08ca5bd2f179
 # ╟─542763c5-b1d7-4e3f-b972-990f1d14fe39
 # ╟─1cf0a5eb-6f80-4105-8f21-a731583a7665
-# ╠═30f97d5b-e1de-4593-b451-1bd42156a4fc
+# ╟─30f97d5b-e1de-4593-b451-1bd42156a4fc
 # ╟─03dc6676-49f2-486d-a7f2-deac6ce83f29
 # ╟─530a7c51-e3ad-429a-890f-136fa63ff404
 # ╟─4ac709ca-586c-41f8-a239-90b4c885ad7e
