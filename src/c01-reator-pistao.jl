@@ -12,6 +12,7 @@ begin
 
     using CairoMakie
     using DocStringExtensions
+    using Printf
     using Roots
     using SparseArrays: spdiagm
 
@@ -242,11 +243,13 @@ end
 # ╔═╡ 18173d9d-c877-4115-9839-a2db6da464c4
 fig = let
     c = Conditions()
-    ĥ = computehtc(c)
+
+    # FIXME factor 2 to match CFD!
+    ĥ = 2computehtc(c)
 
     fig, ax = reactorplot(; L = c.L)
 
-    for N in [5, 50, 500]
+    for N in [10, 100, 500]
         c.N = N
         δ = c.L / c.N
 
@@ -275,8 +278,11 @@ fig = let
 
         z = cellwalls(c.L, δ)[1:end-1]
         stairs!(ax, z, T, label = "N = $(c.N)", step = :post)
+
+        global Tend = @sprintf("%.1f", T[end])
     end
 
+    ax.title = "Temperature final = $(Tend) K"
     ax.yticks = range(300, 400, 6)
     ylims!(ax, (300, 400))
     axislegend(position = :rb)
@@ -285,6 +291,11 @@ end;
 
 # ╔═╡ 2a5c963b-80c4-4f31-a997-542cef9a2f03
 fig
+
+# ╔═╡ f9b1527e-0d91-490b-95f6-13b649fe61db
+md"""
+## Pacotes
+"""
 
 # ╔═╡ Cell order:
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
@@ -304,4 +315,5 @@ fig
 # ╟─8b69fbf0-73f8-4297-b810-7cc17486712e
 # ╟─cba4b197-9cbf-4c6d-9a5c-79dd212953dc
 # ╟─f9687d19-1fc9-40b1-97b1-365b80061a1b
+# ╟─f9b1527e-0d91-490b-95f6-13b649fe61db
 # ╟─92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
