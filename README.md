@@ -10,7 +10,7 @@ Julia *from zero to hero* com uma abordagem para computação científica.
 
 ## Antes de começar
 
-1. Ler [este anexo](tutorials/a01-colaboracao-cientifica.jl) para se
+1. Ler [este anexo](https://wallytutor.github.io/julia-for-scientists/a01-colaboracao-cientifica.html) para se
     familiarizar com alguns elementos que vamos abordar no que se segue.
 
 1. [Instalar Julia](https://julialang.org/downloads/) na versão
