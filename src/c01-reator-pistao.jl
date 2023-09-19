@@ -11,6 +11,7 @@ begin
     Pkg.instantiate()
 
     using CairoMakie
+    using DelimitedFiles
     using DocStringExtensions
     using Printf
     using Roots
@@ -23,11 +24,6 @@ end
 # ╔═╡ e275b8ce-52b8-11ee-066f-3d20f8f1593e
 md"""
 # Reator pistão - Parte 1
-"""
-
-# ╔═╡ 67460379-cf1d-43b2-8a89-c34e83d2bdb9
-md"""
-## Condições globais
 """
 
 # ╔═╡ 53f1cba1-130f-4bb2-bf64-5e948b38b2c7
@@ -242,10 +238,11 @@ end
 
 # ╔═╡ 18173d9d-c877-4115-9839-a2db6da464c4
 fig = let
+    data = readdlm("c01-reator-pistao/postprocess.dat", Float64)
+    
     c = Conditions()
 
-    # FIXME factor 2 to match CFD!
-    ĥ = 2computehtc(c)
+    ĥ = computehtc(c)
 
     fig, ax = reactorplot(; L = c.L)
 
@@ -256,8 +253,9 @@ fig = let
         Aᵥ = π * c.R^2
         Aₛ = 2π * c.R * δ
 
+        # FIXME factor 2 to match CFD!
         a₁ = c.ρ * c.u * Aᵥ * c.cₚ
-        a₂ = ĥ * Aₛ
+        a₂ = 2ĥ * Aₛ
 
         A⁺ = a₁ + 0.5a₂
         A⁻ = a₁ - 0.5a₂
@@ -282,7 +280,9 @@ fig = let
         global Tend = @sprintf("%.1f", T[end])
     end
 
-    ax.title = "Temperature final = $(Tend) K"
+    lines!(ax, data[:, 1], data[:, 2], color=:black, label = "CFD")
+    
+    ax.title = "Temperatura final = $(Tend) K"
     ax.yticks = range(300, 400, 6)
     ylims!(ax, (300, 400))
     axislegend(position = :rb)
@@ -299,7 +299,6 @@ md"""
 
 # ╔═╡ Cell order:
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
-# ╟─67460379-cf1d-43b2-8a89-c34e83d2bdb9
 # ╟─53f1cba1-130f-4bb2-bf64-5e948b38b2c7
 # ╠═18173d9d-c877-4115-9839-a2db6da464c4
 # ╟─2a5c963b-80c4-4f31-a997-542cef9a2f03
