@@ -38,6 +38,7 @@ VERBOSE = 1
 FORCE = false
 
 notebooks_ready = [
+    "index"
     "000-preambulo-e-pluto"
     "001-primeiros-passos"
     "002-manipulacao-textual"
