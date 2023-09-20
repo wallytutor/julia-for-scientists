@@ -7,7 +7,7 @@ using InteractiveUtils
 # ╔═╡ 6bab4f07-a54a-41c8-b8b2-dc9459197be1
 begin
     using PlutoUI
-    TableOfContents()
+    TableOfContents(title = "Conteúdos")
 end
 
 # ╔═╡ 1b482d99-8528-4290-8f2b-1a93773c1471
