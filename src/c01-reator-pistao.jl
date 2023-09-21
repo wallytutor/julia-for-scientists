@@ -30,16 +30,19 @@ md"""
 md"""
 ## Formulação na temperatura
 
-[Lei do resfriamento de Newton](https://pt.wikipedia.org/wiki/Lei_do_resfriamento_de_Newton)
+No que se segue vamos implementar a forma mais simples de um reator pistão. Para este primeiro estudo o foco será dado apenas na solução da equação da energia. As etapas globais implementadas aqui seguem o livro de [Kee *et al.* (2017)](https://www.wiley.com/en-ie/Chemically+Reacting+Flow%3A+Theory%2C+Modeling%2C+and+Simulation%2C+2nd+Edition-p-9781119184874), seção 9.2.
 
-Os cálculos do [número de Nusselt](https://en.wikipedia.org/wiki/Nusselt_number)
-"""
+Da forma simplificada como tratado, o problema oferece uma solução analítica na forma da [lei do resfriamento de Newton](https://pt.wikipedia.org/wiki/Lei_do_resfriamento_de_Newton), o que é útil para a verificação do problema. Os cálculos do número de Nusselt para avaliação do coeficiente de transferência de calor são providos nos anexos com expressões discutidas [aqui](https://en.wikipedia.org/wiki/Nusselt_number).
 
-# ╔═╡ aa0f612f-377a-4a01-9db5-16e606cf8ef7
-md"""
+### Conservação da matéria
+
+O reator em questão conserva a massa transportada, o que é matematicamente expresso pela ausência de variação axial do fluxo de matéria, ou seja
+
 ```math
 \frac{d(\rho{}u)}{dz}=0
 ```
+
+### Conservação da energia
 
 ```math
 \frac{dE}{dt}=
@@ -61,13 +64,12 @@ md"""
 \int_{V}\nabla\cdotp(\rho{}h\mathbf{V})dV
 ```
 
+### Lei constitutiva
+
 ```math
 \dot{Q}=\hat{h}A_{s}(T_{w}-T)=\hat{h}(Pdz)(T_{w}-T)
 ```
-"""
 
-# ╔═╡ d4daf57c-cbaf-4911-8688-d46c89b7d6cd
-md"""
 ```math
 \int_{V}\nabla\cdotp(\rho{}h\mathbf{V})dV=
 \hat{h}(Pdz)(T_{w}-T)
@@ -82,10 +84,9 @@ md"""
 ```
 
 ``\delta{}V=A_{c}dz``
-"""
 
-# ╔═╡ bdd8cf33-6bce-4303-8d30-86719f9054de
-md"""
+### Modelo do reator
+
 ```math
 \rho{}u{}\frac{dh}{dz}+h\frac{d(\rho{}u)}{dz}=
 \hat{h}\frac{P}{A_{c}}(T_{w}-T)
@@ -95,10 +96,9 @@ md"""
 \rho{}u{}c_{p}A_{c}\frac{dT}{dz}=
 \hat{h}P(T_{w}-T)
 ```
-"""
 
-# ╔═╡ 80df79d6-c3ca-4afd-89df-d665c933731f
-md"""
+### Formulação numérica
+
 ```math
 \int_{T_P}^{T_N}\rho{}u{}c_{p}A_{c}dT=
 \int_{0}^{\delta}\hat{h}{P}(T_{w}-T)dz
@@ -115,45 +115,23 @@ md"""
 ```
 
 ```math
-a_{1}(T_{E} - T_{P})=
-a_{2}(T_{w}-T^{\star})
-```
-
-```math
 a(T_{E} - T_{P})=
 T_{w}-T^{\star}
 ```
-"""
 
-# ╔═╡ 04ce41bf-c0c4-4db5-8ced-df16a72eaf10
-md"""
+### Relação de interpolação
+
 ```math
 T^{\star}=\frac{T_{E}+T_{P}}{2}
 ```
 
-```math
-2a(T_{E}-T_{P})=
-2T_{w}-T_{E}-T_{P}
-```
-
-```math
-2aT_{E} - 2aT_{P}=
-2T_{w} - T_{E} - T_{P}
-```
-
-```math
-2aT_{E} + T_{E}=
-2aT_{P} - T_{P} + 2T_{w}
-```
+Aplicando-se esta expressão na forma numérica final, após manipulação chega-se à
 
 ```math
 (2a + 1)T_{E}=
 (2a - 1)T_{P} + 2T_{w}
 ```
-"""
 
-# ╔═╡ 5ad7df94-f80c-4db5-acce-9d703c137ee2
-md"""
 ```math
 A^{+}T_{E}=A^{-}T_{P} + 1
 ```
@@ -161,10 +139,9 @@ A^{+}T_{E}=A^{-}T_{P} + 1
 ```math
 A^{\pm} = \frac{2a \pm 1}{2T_{w}}
 ```
-"""
 
-# ╔═╡ 4903552c-2daf-49f2-94af-f05f2bea2214
-md"""
+### Condição inicial
+
 ```math
 A^{+}T_{P}=A^{-}T_{G} + 1
 ```
@@ -180,10 +157,9 @@ A^{+}T_{P}=A^{-}(2T_{0}-T_{P}) + 1
 ```math
 C_{1}T_{P}=1 + 2A^{-}T_{0}
 ```
-"""
 
-# ╔═╡ 4cda6d02-a63e-4178-ab62-4b331eb8afb2
-md"""
+### Forma matricial
+
 ```math
 \begin{bmatrix}
  C_{1}  &  0     &  0     & \dots  &  0      &  0      \\
@@ -293,9 +269,6 @@ md"""
 # ╔═╡ 30f97d5b-e1de-4593-b451-1bd42156a4fc
 begin
     Base.@kwdef mutable struct Conditions
-        " Número de células na direção do eixo do reator "
-        N::Int64 = 100
-
         "Comprimento do reator [m]"
         L::Float64 = 10.0
 
@@ -341,6 +314,33 @@ end
 "Coordenadas dos limites das células [m]"
 function cellwalls(L, δ)
     return collect(0.0:δ:L)
+end
+
+# ╔═╡ e08d8341-f3a5-4ff1-b18e-19e9a0757b24
+function solvethermalpfr(c, N, ĥ)
+    δ = c.L / N
+    r = c.R / 2δ
+    a = (c.ρ * c.u * c.cₚ * r) / ĥ
+
+    A⁺ = (2a + 1) / (2c.Tₛ)
+    A⁻ = (2a - 1) / (2c.Tₛ)
+
+    C₁ = A⁺ + A⁻
+    C₂ = 2A⁻ * c.Tₚ
+
+    d₀ = +A⁺ * ones(N)
+    d₁ = -A⁻ * ones(N - 1)
+    b = ones(N)
+
+    d₀[1] = C₁
+    b[1] = 1 + C₂
+
+    M = spdiagm(0 => d₀, -1 => d₁)
+    T = M \ b
+
+    z = cellwalls(c.L, δ)[1:end-1]
+
+    return z, T
 end
 
 # ╔═╡ 4ac709ca-586c-41f8-a239-90b4c885ad7e
@@ -422,9 +422,10 @@ end
 
 # ╔═╡ 74233232-e490-4d6e-b424-5228f0e680f6
 fig = let
-    data = readdlm("c01-reator-pistao/default-h2o/postprocess.dat", Float64)
+    data = readdlm("c01-reator-pistao/constant-properties/postprocess.dat", Float64)
 
-    Γ = 2
+    # FIXME this is for fitting CFD mean values!
+    Γ = 2.1
 
     c = Conditions()
 
@@ -433,30 +434,8 @@ fig = let
     fig, ax = reactorplot(; L = c.L)
 
     for N in [10, 100, 500]
-        c.N = N
-        δ = c.L / c.N
-
-        r = c.R / 2δ
-        a = (c.ρ * c.u * c.cₚ * r) / ĥ
-
-        A⁺ = (2a + 1) / (2c.Tₛ)
-        A⁻ = (2a - 1) / (2c.Tₛ)
-
-        C₁ = A⁺ + A⁻
-        C₂ = 2A⁻ * c.Tₚ
-
-        d₀ = +A⁺ * ones(c.N)
-        d₁ = -A⁻ * ones(c.N - 1)
-        b = ones(c.N)
-
-        d₀[1] = C₁
-        b[1] = 1 + C₂
-
-        M = spdiagm(0 => d₀, -1 => d₁)
-        T = M \ b
-
-        z = cellwalls(c.L, δ)[1:end-1]
-        stairs!(ax, z, T, label = "N = $(c.N)", step = :post)
+        z, T = solvethermalpfr(c, N, ĥ)
+        stairs!(ax, z, T, label = "N = $(N)", step = :post)
 
         global Tend = @sprintf("%.1f", T[end])
     end
@@ -491,15 +470,8 @@ md"""
 
 # ╔═╡ Cell order:
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
-# ╟─53f1cba1-130f-4bb2-bf64-5e948b38b2c7
-# ╟─aa0f612f-377a-4a01-9db5-16e606cf8ef7
-# ╟─d4daf57c-cbaf-4911-8688-d46c89b7d6cd
-# ╟─bdd8cf33-6bce-4303-8d30-86719f9054de
-# ╟─80df79d6-c3ca-4afd-89df-d665c933731f
-# ╟─04ce41bf-c0c4-4db5-8ced-df16a72eaf10
-# ╟─5ad7df94-f80c-4db5-acce-9d703c137ee2
-# ╟─4903552c-2daf-49f2-94af-f05f2bea2214
-# ╟─4cda6d02-a63e-4178-ab62-4b331eb8afb2
+# ╠═53f1cba1-130f-4bb2-bf64-5e948b38b2c7
+# ╠═e08d8341-f3a5-4ff1-b18e-19e9a0757b24
 # ╠═74233232-e490-4d6e-b424-5228f0e680f6
 # ╟─2a5c963b-80c4-4f31-a997-542cef9a2f03
 # ╟─7c43c2e5-98da-4e35-8f06-1a301f02cfec

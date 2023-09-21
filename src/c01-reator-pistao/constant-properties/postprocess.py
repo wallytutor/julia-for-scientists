@@ -6,6 +6,7 @@ run `foamToVTK -latestTime` from the command line.  This will
 generate a `VTK/` folder with data in VTK format for reading
 and processing with help of PyVista.
 """
+from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -44,7 +45,8 @@ def plot_results(X, T):
 
 def main():
     """ Post-processing workflow. """
-    mesh = pv.read("VTK/pitzDaily_10000/internal.vtu")
+    here = Path(__file__).parent.name
+    mesh = pv.read(f"VTK/{here}_10000/internal.vtu")
     df = tabulate(mesh, np.linspace(0.0, 0.0049, 10))
 
     # Downsample results, every 5 cm is enough!
