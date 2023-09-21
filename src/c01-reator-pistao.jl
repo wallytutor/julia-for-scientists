@@ -178,17 +178,15 @@ function reactorplot(; L)
     return fig, ax
 end
 
-# ╔═╡ 91728930-3bde-476c-b398-75948c524312
-"Número de Reynolds diametral"
-function condition_ReD(c)
-    return 2 * c.ρ * c.u * c.R / c.μ
-end
-
 # ╔═╡ 8b69fbf0-73f8-4297-b810-7cc17486712e
 "Equação de Gnielinski para número de Nusselt"
 function gnielinski_Nu(Re, Pr)
-    @assert 3000.0 <= Re <= 5.0e+06
-    @assert 0.5 <= Pr <= 2000.0
+    function validate(Re, Pr)
+        @assert 3000.0 <= Re <= 5.0e+06
+        @assert 0.5 <= Pr <= 2000.0
+    end
+
+    @warnonly validate(Re, Pr)
 
     f = (0.79 * log(Re) - 1.64)^(-2)
     g = f / 8
@@ -201,10 +199,14 @@ end
 # ╔═╡ cba4b197-9cbf-4c6d-9a5c-79dd212953dc
 "Equação de Dittus-Boelter para número de Nusselt"
 function dittusboelter_Nu(Re, Pr, L, D; what = :heating)
-    @assert 10000.0 <= Re
-    @assert 0.6 <= Pr <= 160.0
-    @assert 10.0 <= L/D
+    function validate(Re, Pr, L, D)
+        @assert 10000.0 <= Re
+        @assert 0.6 <= Pr <= 160.0
+        @assert 10.0 <= L/D
+    end
 
+    @warnonly validate(Re, Pr, L, D)
+    
     n = (what == :heating) ? 0.4 : 0.4
     return 0.023 * Re^(4/5) * Pr^n
 end
@@ -212,17 +214,21 @@ end
 # ╔═╡ f9687d19-1fc9-40b1-97b1-365b80061a1b
 "Estima coeficient de troca convectiva do escoamento"
 function computehtc(c; method = :g)
+    D = 2c.R
+    
     Pr = c.Pr
-    Re = condition_ReD(c)
-    Nu = 3.66
+    Re = c.ρ * c.u * D / c.μ
 
+    Nug = gnielinski_Nu(Re, Pr)
+    Nud = dittusboelter_Nu(Re, Pr, c.L, D)
+    
     if Re > 3000
-        Nug = gnielinski_Nu(Re, Pr)
-        Nud = dittusboelter_Nu(Re, Pr, c.L, 2*c.R)
         Nu = (method == :g) ? Nug : Nub
+    else
+        Nu = 3.66
     end
 
-    h = Nu * c.k / (2c.R)
+    h = Nu * c.k / D
 
     println("""\
         Reynolds ................... $(Re)
@@ -292,6 +298,17 @@ end;
 # ╔═╡ 2a5c963b-80c4-4f31-a997-542cef9a2f03
 fig
 
+# ╔═╡ a537a56b-9b46-4363-b462-e92d02f2aa35
+macro warnonly(ex)
+    quote
+        try
+            $(esc(ex))
+        catch e
+            @warn e
+        end
+    end
+end
+
 # ╔═╡ f9b1527e-0d91-490b-95f6-13b649fe61db
 md"""
 ## Pacotes
@@ -310,9 +327,9 @@ md"""
 # ╟─03dc6676-49f2-486d-a7f2-deac6ce83f29
 # ╟─530a7c51-e3ad-429a-890f-136fa63ff404
 # ╟─4ac709ca-586c-41f8-a239-90b4c885ad7e
-# ╟─91728930-3bde-476c-b398-75948c524312
 # ╟─8b69fbf0-73f8-4297-b810-7cc17486712e
 # ╟─cba4b197-9cbf-4c6d-9a5c-79dd212953dc
 # ╟─f9687d19-1fc9-40b1-97b1-365b80061a1b
+# ╟─a537a56b-9b46-4363-b462-e92d02f2aa35
 # ╟─f9b1527e-0d91-490b-95f6-13b649fe61db
 # ╟─92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
