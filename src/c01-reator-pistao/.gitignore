@@ -1,5 +1,7 @@
 constant/polyMesh/
 logs/
+processor*/
 VTK/
 log.rhoSimpleFoam
 case.foam
+*.msh

@@ -322,9 +322,6 @@ begin
 
         "Viscosidade do fluido [Pa.s]"
         μ::Float64 = 0.001
-
-        "Condutividade térmica do fluido [W/(m.K)]"
-        k::Float64 = 0.6
     end
 
     @doc """
@@ -408,7 +405,8 @@ function computehtc(c; method = :g)
         Nu = 3.66
     end
 
-    h = Nu * c.k / D
+    k = c.cₚ * c.μ / Pr
+    h = Nu * k / D
 
     println("""\
         Reynolds ................... $(Re)
@@ -424,7 +422,7 @@ end
 
 # ╔═╡ 74233232-e490-4d6e-b424-5228f0e680f6
 fig = let
-    data = readdlm("c01-reator-pistao/postprocess.dat", Float64)
+    data = readdlm("c01-reator-pistao/default-h2o/postprocess.dat", Float64)
 
     Γ = 2
 
@@ -470,7 +468,7 @@ fig = let
     ylims!(ax, (300, 400))
     axislegend(position = :rb)
     fig
-end
+end;
 
 # ╔═╡ 2a5c963b-80c4-4f31-a997-542cef9a2f03
 fig
@@ -493,7 +491,7 @@ md"""
 
 # ╔═╡ Cell order:
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
-# ╠═53f1cba1-130f-4bb2-bf64-5e948b38b2c7
+# ╟─53f1cba1-130f-4bb2-bf64-5e948b38b2c7
 # ╟─aa0f612f-377a-4a01-9db5-16e606cf8ef7
 # ╟─d4daf57c-cbaf-4911-8688-d46c89b7d6cd
 # ╟─bdd8cf33-6bce-4303-8d30-86719f9054de
@@ -517,4 +515,4 @@ md"""
 # ╟─f9687d19-1fc9-40b1-97b1-365b80061a1b
 # ╟─a537a56b-9b46-4363-b462-e92d02f2aa35
 # ╟─f9b1527e-0d91-490b-95f6-13b649fe61db
-# ╠═92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
+# ╟─92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
