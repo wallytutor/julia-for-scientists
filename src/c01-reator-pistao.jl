@@ -30,7 +30,187 @@ md"""
 md"""
 ## Formulação na temperatura
 
-Os cálculos do [número de Nusselt](https://en.wikipedia.org/wiki/Nusselt_number)...
+[Lei do resfriamento de Newton](https://pt.wikipedia.org/wiki/Lei_do_resfriamento_de_Newton)
+
+Os cálculos do [número de Nusselt](https://en.wikipedia.org/wiki/Nusselt_number)
+"""
+
+# ╔═╡ aa0f612f-377a-4a01-9db5-16e606cf8ef7
+md"""
+```math
+\frac{d(\rho{}u)}{dz}=0
+```
+
+```math
+\frac{dE}{dt}=
+\frac{dQ}{dt}+
+\frac{dW}{dt}
+\implies
+\int_{\Omega}\rho{}e\mathbf{V}\cdotp\mathbf{n}dA_{c}=
+\dot{Q}-
+\int_{\Omega}p\mathbf{V}\cdotp\mathbf{n}dA_{c}
+```
+
+```math
+\int_{\Omega}\rho{}h\mathbf{V}\cdotp\mathbf{n}dA_{c}=
+\dot{Q}\qquad{}\text{aonde}\qquad{}h = e+\frac{p}{\rho}
+```
+
+```math
+\int_{\Omega}\rho{}h\mathbf{V}\cdotp\mathbf{n}dA_{c}=
+\int_{V}\nabla\cdotp(\rho{}h\mathbf{V})dV
+```
+
+```math
+\dot{Q}=\hat{h}A_{s}(T_{w}-T)=\hat{h}(Pdz)(T_{w}-T)
+```
+"""
+
+# ╔═╡ d4daf57c-cbaf-4911-8688-d46c89b7d6cd
+md"""
+```math
+\int_{V}\nabla\cdotp(\rho{}h\mathbf{V})dV=
+\hat{h}(Pdz)(T_{w}-T)
+```
+
+```math
+\frac{d(\rho{}u{}h)}{dz}=
+\hat{h}\frac{Pdz}{\delta{}V}(T_{w}-T)
+\implies
+\frac{d(\rho{}u{}h)}{dz}=
+\hat{h}\frac{P}{A_{c}}(T_{w}-T)
+```
+
+``\delta{}V=A_{c}dz``
+"""
+
+# ╔═╡ bdd8cf33-6bce-4303-8d30-86719f9054de
+md"""
+```math
+\rho{}u{}\frac{dh}{dz}+h\frac{d(\rho{}u)}{dz}=
+\hat{h}\frac{P}{A_{c}}(T_{w}-T)
+```
+
+```math
+\rho{}u{}c_{p}A_{c}\frac{dT}{dz}=
+\hat{h}P(T_{w}-T)
+```
+"""
+
+# ╔═╡ 80df79d6-c3ca-4afd-89df-d665c933731f
+md"""
+```math
+\int_{T_P}^{T_N}\rho{}u{}c_{p}A_{c}dT=
+\int_{0}^{\delta}\hat{h}{P}(T_{w}-T)dz
+```
+
+```math
+\rho{}u{}c_{p}A_{c}\int_{T_P}^{T_E}dT=
+\hat{h}{P}(T_{w}-T^{\prime})\int_{0}^{\delta}dz
+```
+
+```math
+\rho{}u{}c_{p}A_{c}(T_{E} - T_{P})=
+\hat{h}{P}\delta(T_{w}-T^{\star})
+```
+
+```math
+a_{1}(T_{E} - T_{P})=
+a_{2}(T_{w}-T^{\star})
+```
+
+```math
+a(T_{E} - T_{P})=
+T_{w}-T^{\star}
+```
+"""
+
+# ╔═╡ 04ce41bf-c0c4-4db5-8ced-df16a72eaf10
+md"""
+```math
+T^{\star}=\frac{T_{E}+T_{P}}{2}
+```
+
+```math
+2a(T_{E}-T_{P})=
+2T_{w}-T_{E}-T_{P}
+```
+
+```math
+2aT_{E} - 2aT_{P}=
+2T_{w} - T_{E} - T_{P}
+```
+
+```math
+2aT_{E} + T_{E}=
+2aT_{P} - T_{P} + 2T_{w}
+```
+
+```math
+(2a + 1)T_{E}=
+(2a - 1)T_{P} + 2T_{w}
+```
+"""
+
+# ╔═╡ 5ad7df94-f80c-4db5-acce-9d703c137ee2
+md"""
+```math
+A^{+}T_{E}=A^{-}T_{P} + 1
+```
+
+```math
+A^{\pm} = \frac{2a \pm 1}{2T_{w}}
+```
+"""
+
+# ╔═╡ 4903552c-2daf-49f2-94af-f05f2bea2214
+md"""
+```math
+A^{+}T_{P}=A^{-}T_{G} + 1
+```
+
+```math
+A^{+}T_{P}=A^{-}(2T_{0}-T_{P}) + 1
+```
+
+```math
+(A^{+}+A^{-})T_{P}=1 + 2A^{-}T_{0}
+```
+
+```math
+C_{1}T_{P}=1 + 2A^{-}T_{0}
+```
+"""
+
+# ╔═╡ 4cda6d02-a63e-4178-ab62-4b331eb8afb2
+md"""
+```math
+\begin{bmatrix}
+ C_{1}  &  0     &  0     & \dots  &  0      &  0      \\
+-A^{-}  &  A^{+} &  0     & \dots  &  0      &  0      \\
+ 0      & -A^{-} &  A^{+} & \ddots &  0      &  0      \\
+\vdots  & \ddots & \ddots & \ddots & \ddots  & \vdots  \\
+ 0      &  0     &  0     & -A^{-} &  A^{+}  &   0     \\
+ 0      &  0     &  0     &  0     & -A^{-}  &   A^{+} \\
+\end{bmatrix}
+\begin{bmatrix}
+T_{1}    \\
+T_{2}    \\
+T_{3}    \\
+\vdots   \\
+T_{N-1}  \\
+T_{N}    \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 + 2A^{-}T_{0} \\
+1               \\
+1               \\
+\vdots          \\
+1               \\
+1               \\
+\end{bmatrix}
+```
 """
 
 # ╔═╡ 7c43c2e5-98da-4e35-8f06-1a301f02cfec
@@ -206,7 +386,7 @@ function dittusboelter_Nu(Re, Pr, L, D; what = :heating)
     end
 
     @warnonly validate(Re, Pr, L, D)
-    
+
     n = (what == :heating) ? 0.4 : 0.4
     return 0.023 * Re^(4/5) * Pr^n
 end
@@ -215,13 +395,13 @@ end
 "Estima coeficient de troca convectiva do escoamento"
 function computehtc(c; method = :g)
     D = 2c.R
-    
+
     Pr = c.Pr
     Re = c.ρ * c.u * D / c.μ
 
     Nug = gnielinski_Nu(Re, Pr)
     Nud = dittusboelter_Nu(Re, Pr, c.L, D)
-    
+
     if Re > 3000
         Nu = (method == :g) ? Nug : Nub
     else
@@ -242,13 +422,15 @@ function computehtc(c; method = :g)
     return h
 end
 
-# ╔═╡ 18173d9d-c877-4115-9839-a2db6da464c4
+# ╔═╡ 74233232-e490-4d6e-b424-5228f0e680f6
 fig = let
     data = readdlm("c01-reator-pistao/postprocess.dat", Float64)
-    
+
+    Γ = 2
+
     c = Conditions()
 
-    ĥ = computehtc(c)
+    ĥ = Γ * computehtc(c)
 
     fig, ax = reactorplot(; L = c.L)
 
@@ -256,29 +438,24 @@ fig = let
         c.N = N
         δ = c.L / c.N
 
-        Aᵥ = π * c.R^2
-        Aₛ = 2π * c.R * δ
+        r = c.R / 2δ
+        a = (c.ρ * c.u * c.cₚ * r) / ĥ
 
-        # FIXME factor 2 to match CFD!
-        a₁ = c.ρ * c.u * Aᵥ * c.cₚ
-        a₂ = 2ĥ * Aₛ
+        A⁺ = (2a + 1) / (2c.Tₛ)
+        A⁻ = (2a - 1) / (2c.Tₛ)
 
-        A⁺ = a₁ + 0.5a₂
-        A⁻ = a₁ - 0.5a₂
+        C₁ = A⁺ + A⁻
+        C₂ = 2A⁻ * c.Tₚ
 
-        C₁ = a₂ * c.Tₛ
-        C₂ = C₁ + 2A⁻ * c.Tₚ
-
-        d₀ = A⁺ * ones(c.N)
-        d₀[1] = 2a₁
-
+        d₀ = +A⁺ * ones(c.N)
         d₁ = -A⁻ * ones(c.N - 1)
+        b = ones(c.N)
 
-        C = C₁ * ones(c.N)
-        C[1] = C₂
+        d₀[1] = C₁
+        b[1] = 1 + C₂
 
         M = spdiagm(0 => d₀, -1 => d₁)
-        T = M \ C
+        T = M \ b
 
         z = cellwalls(c.L, δ)[1:end-1]
         stairs!(ax, z, T, label = "N = $(c.N)", step = :post)
@@ -287,13 +464,13 @@ fig = let
     end
 
     lines!(ax, data[:, 1], data[:, 2], color=:black, label = "CFD")
-    
+
     ax.title = "Temperatura final = $(Tend) K"
     ax.yticks = range(300, 400, 6)
     ylims!(ax, (300, 400))
     axislegend(position = :rb)
     fig
-end;
+end
 
 # ╔═╡ 2a5c963b-80c4-4f31-a997-542cef9a2f03
 fig
@@ -316,8 +493,16 @@ md"""
 
 # ╔═╡ Cell order:
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
-# ╟─53f1cba1-130f-4bb2-bf64-5e948b38b2c7
-# ╠═18173d9d-c877-4115-9839-a2db6da464c4
+# ╠═53f1cba1-130f-4bb2-bf64-5e948b38b2c7
+# ╟─aa0f612f-377a-4a01-9db5-16e606cf8ef7
+# ╟─d4daf57c-cbaf-4911-8688-d46c89b7d6cd
+# ╟─bdd8cf33-6bce-4303-8d30-86719f9054de
+# ╟─80df79d6-c3ca-4afd-89df-d665c933731f
+# ╟─04ce41bf-c0c4-4db5-8ced-df16a72eaf10
+# ╟─5ad7df94-f80c-4db5-acce-9d703c137ee2
+# ╟─4903552c-2daf-49f2-94af-f05f2bea2214
+# ╟─4cda6d02-a63e-4178-ab62-4b331eb8afb2
+# ╠═74233232-e490-4d6e-b424-5228f0e680f6
 # ╟─2a5c963b-80c4-4f31-a997-542cef9a2f03
 # ╟─7c43c2e5-98da-4e35-8f06-1a301f02cfec
 # ╠═e4428ffe-6180-4145-bed6-08ca5bd2f179
@@ -332,4 +517,4 @@ md"""
 # ╟─f9687d19-1fc9-40b1-97b1-365b80061a1b
 # ╟─a537a56b-9b46-4363-b462-e92d02f2aa35
 # ╟─f9b1527e-0d91-490b-95f6-13b649fe61db
-# ╟─92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
+# ╠═92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
