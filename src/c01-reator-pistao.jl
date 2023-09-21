@@ -413,6 +413,7 @@ function computehtc(c; method = :g)
         Nusselt (Gnielinsk) ........ $(Nug)
         Nusselt (Dittus-Boelter) ... $(Nud)
         Nusselt (usado aqui) ....... $(Nu)
+        k .......................... $(k) W/(m.K)
         h .......................... $(h) W/(m².K)\
         """
     )
@@ -422,14 +423,10 @@ end
 
 # ╔═╡ 74233232-e490-4d6e-b424-5228f0e680f6
 fig = let
-    data = readdlm("c01-reator-pistao/constant-properties/postprocess.dat", Float64)
-
-    # FIXME this is for fitting CFD mean values!
-    Γ = 2.1
+    data = readdlm("c01-reator-pistao/fluent-reference/postprocess.dat", Float64)
 
     c = Conditions()
-
-    ĥ = Γ * computehtc(c)
+    ĥ = computehtc(c)
 
     fig, ax = reactorplot(; L = c.L)
 
@@ -484,7 +481,7 @@ md"""
 # ╟─4ac709ca-586c-41f8-a239-90b4c885ad7e
 # ╟─8b69fbf0-73f8-4297-b810-7cc17486712e
 # ╟─cba4b197-9cbf-4c6d-9a5c-79dd212953dc
-# ╟─f9687d19-1fc9-40b1-97b1-365b80061a1b
+# ╠═f9687d19-1fc9-40b1-97b1-365b80061a1b
 # ╟─a537a56b-9b46-4363-b462-e92d02f2aa35
 # ╟─f9b1527e-0d91-490b-95f6-13b649fe61db
 # ╟─92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
