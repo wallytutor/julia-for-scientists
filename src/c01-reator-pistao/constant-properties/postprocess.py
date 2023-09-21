@@ -52,7 +52,7 @@ def main():
     # Downsample results, every 5 cm is enough!
     df = df.iloc[::1000]
     df.to_csv("postprocess.dat", index=False, sep="\t",
-            header=None, float_format="%.6f")
+              header=None, float_format="%.6f")
 
     plot_results(df["X"].to_numpy(), df["T"].to_numpy())
 
