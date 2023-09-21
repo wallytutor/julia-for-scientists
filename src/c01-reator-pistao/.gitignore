@@ -1,7 +1,10 @@
-constant/polyMesh/
+/**/constant/polyMesh/
 logs/
 processor*/
 VTK/
 log.rhoSimpleFoam
 case.foam
 *.msh
+
+## 3D case large files
+constant-properties-3d/4291/

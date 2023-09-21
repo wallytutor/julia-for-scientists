@@ -161,7 +161,7 @@ C_{1}T_{P}=1 + 2A^{-}T_{0}
 ### Forma matricial
 
 ```math
-\begin{bmatrix}
+\begin{bmatrix} 
  C_{1}  &  0     &  0     & \dots  &  0      &  0      \\
 -A^{-}  &  A^{+} &  0     & \dots  &  0      &  0      \\
  0      & -A^{-} &  A^{+} & \ddots &  0      &  0      \\
@@ -169,7 +169,7 @@ C_{1}T_{P}=1 + 2A^{-}T_{0}
  0      &  0     &  0     & -A^{-} &  A^{+}  &   0     \\
  0      &  0     &  0     &  0     & -A^{-}  &   A^{+} \\
 \end{bmatrix}
-\begin{bmatrix}
+\begin{bmatrix} 
 T_{1}    \\
 T_{2}    \\
 T_{3}    \\
@@ -178,7 +178,7 @@ T_{N-1}  \\
 T_{N}    \\
 \end{bmatrix}
 =
-\begin{bmatrix}
+\begin{bmatrix} 
 1 + 2A^{-}T_{0} \\
 1               \\
 1               \\
@@ -321,17 +321,17 @@ function solvethermalpfr(c, N, ĥ)
     δ = c.L / N
     r = c.R / 2δ
     a = (c.ρ * c.u * c.cₚ * r) / ĥ
-
+    
     A⁺ = (2a + 1) / (2c.Tₛ)
     A⁻ = (2a - 1) / (2c.Tₛ)
 
     C₁ = A⁺ + A⁻
     C₂ = 2A⁻ * c.Tₚ
-
+    
     d₀ = +A⁺ * ones(N)
     d₁ = -A⁻ * ones(N - 1)
     b = ones(N)
-
+    
     d₀[1] = C₁
     b[1] = 1 + C₂
 
@@ -383,7 +383,7 @@ function dittusboelter_Nu(Re, Pr, L, D; what = :heating)
     end
 
     @warnonly validate(Re, Pr, L, D)
-
+    
     n = (what == :heating) ? 0.4 : 0.4
     return 0.023 * Re^(4/5) * Pr^n
 end
@@ -392,13 +392,13 @@ end
 "Estima coeficient de troca convectiva do escoamento"
 function computehtc(c; method = :g)
     D = 2c.R
-
+    
     Pr = c.Pr
     Re = c.ρ * c.u * D / c.μ
 
     Nug = gnielinski_Nu(Re, Pr)
     Nud = dittusboelter_Nu(Re, Pr, c.L, D)
-
+    
     if Re > 3000
         Nu = (method == :g) ? Nug : Nub
     else
@@ -423,13 +423,15 @@ end
 
 # ╔═╡ 74233232-e490-4d6e-b424-5228f0e680f6
 fig = let
-    data = readdlm("c01-reator-pistao/fluent-reference/postprocess.dat", Float64)
-
+    case = "fluent-reference"
+    # case = "constant-properties-3d"
+    data = readdlm("c01-reator-pistao/$(case)/postprocess.dat", Float64)
+    
     c = Conditions()
     ĥ = computehtc(c)
 
     fig, ax = reactorplot(; L = c.L)
-
+    
     for N in [10, 100, 500]
         z, T = solvethermalpfr(c, N, ĥ)
         stairs!(ax, z, T, label = "N = $(N)", step = :post)
@@ -438,7 +440,7 @@ fig = let
     end
 
     lines!(ax, data[:, 1], data[:, 2], color=:black, label = "CFD")
-
+    
     ax.title = "Temperatura final = $(Tend) K"
     ax.yticks = range(300, 400, 6)
     ylims!(ax, (300, 400))
@@ -467,7 +469,7 @@ md"""
 
 # ╔═╡ Cell order:
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
-# ╠═53f1cba1-130f-4bb2-bf64-5e948b38b2c7
+# ╟─53f1cba1-130f-4bb2-bf64-5e948b38b2c7
 # ╠═e08d8341-f3a5-4ff1-b18e-19e9a0757b24
 # ╠═74233232-e490-4d6e-b424-5228f0e680f6
 # ╟─2a5c963b-80c4-4f31-a997-542cef9a2f03
