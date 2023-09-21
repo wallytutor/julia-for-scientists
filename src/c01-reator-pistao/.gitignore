@@ -2,6 +2,7 @@
 logs/
 processor*/
 VTK/
+log.decomposePar
 log.rhoSimpleFoam
 case.foam
 *.msh
