@@ -151,8 +151,54 @@ A^{+}T_{E}=A^{-}T_{P} + 1
 ```math
 A^{\pm} = \frac{2a \pm 1}{2T_{w}}
 ```
+"""
 
-### Condição inicial
+# ╔═╡ 53f95782-d138-409d-b0b0-04d98d432ee1
+md"""
+### Sistema com condição imersa
+
+#### Condição inicial
+
+```math
+A^{+}T_{1}=1 + A^{-}T_{0}
+```
+
+#### Forma matricial
+
+```math
+\begin{bmatrix}
+ A^{+}  &  0     &  0     & \dots  &  0      &  0      \\
+-A^{-}  &  A^{+} &  0     & \dots  &  0      &  0      \\
+ 0      & -A^{-} &  A^{+} & \ddots &  0      &  0      \\
+\vdots  & \ddots & \ddots & \ddots & \ddots  & \vdots  \\
+ 0      &  0     &  0     & -A^{-} &  A^{+}  &   0     \\
+ 0      &  0     &  0     &  0     & -A^{-}  &   A^{+} \\
+\end{bmatrix}
+\begin{bmatrix}
+T_{1}    \\
+T_{2}    \\
+T_{3}    \\
+\vdots   \\
+T_{N-1}  \\
+T_{N}    \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 + A^{-}T_{0}  \\
+1               \\
+1               \\
+\vdots          \\
+1               \\
+1               \\
+\end{bmatrix}
+```
+"""
+
+# ╔═╡ 79a890f5-c324-4939-91f5-af33ca28bd95
+md"""
+### Sistema com célula fantasma
+
+#### Condição inicial
 
 ```math
 A^{+}T_{P}=A^{-}T_{G} + 1
@@ -163,17 +209,13 @@ A^{+}T_{P}=A^{-}(2T_{0}-T_{P}) + 1
 ```
 
 ```math
-(A^{+}+A^{-})T_{P}=1 + 2A^{-}T_{0}
+(A^{+}+A^{-})T_{P}=C_{1}T_{P}=1 + 2A^{-}T_{0}
 ```
 
-```math
-C_{1}T_{P}=1 + 2A^{-}T_{0}
-```
-
-### Forma matricial
+#### Forma matricial
 
 ```math
-\begin{bmatrix} 
+\begin{bmatrix}
  C_{1}  &  0     &  0     & \dots  &  0      &  0      \\
 -A^{-}  &  A^{+} &  0     & \dots  &  0      &  0      \\
  0      & -A^{-} &  A^{+} & \ddots &  0      &  0      \\
@@ -181,7 +223,7 @@ C_{1}T_{P}=1 + 2A^{-}T_{0}
  0      &  0     &  0     & -A^{-} &  A^{+}  &   0     \\
  0      &  0     &  0     &  0     & -A^{-}  &   A^{+} \\
 \end{bmatrix}
-\begin{bmatrix} 
+\begin{bmatrix}
 T_{1}    \\
 T_{2}    \\
 T_{3}    \\
@@ -190,7 +232,7 @@ T_{N-1}  \\
 T_{N}    \\
 \end{bmatrix}
 =
-\begin{bmatrix} 
+\begin{bmatrix}
 1 + 2A^{-}T_{0} \\
 1               \\
 1               \\
@@ -199,6 +241,13 @@ T_{N}    \\
 1               \\
 \end{bmatrix}
 ```
+"""
+
+# ╔═╡ 86d9caa3-5b77-4f4a-888f-48d8423269ae
+md"""
+### Solução analítica
+
+
 """
 
 # ╔═╡ 7c43c2e5-98da-4e35-8f06-1a301f02cfec
@@ -215,7 +264,7 @@ md"""
 ### Formulação numérica
 
 ```math
-\int_{h_P}^{h_N}\rho{}u{}c_{p}A_{c}dh=
+\int_{h_P}^{h_N}\rho{}u{}A_{c}dh=
 \int_{0}^{\delta}\hat{h}{P}(T_{w}-T)dz
 ```
 
@@ -249,33 +298,14 @@ md"""
 A condição inicial é conhecida na interface e coincide com a temperatura que é usada para o cálculo do fluxo de calor ``T^{\star}`` localmente
 
 ```math
-T^{\star}=T_{0}=\frac{T_{P}+T_{G}}{2}
+T^{\star}=\frac{T_{1}+T_{0}}{2}
 ```
 
 Substituindo essa expressão na forma linear do problema para a célula na fronteira produz
 
 ```math
-2h_{P} - 2h_{G} = 2bT_{w}-bT_{P}-bT_{G}
+2h_{1} = 2bT_{w}-bT_{1}-bT_{0} - 2h_{0}
 ```
-
-É mais conveniente expressar ``T_{G}=2T_{0}-T_{P}``, logo
-
-```math
-h_{P} = bT_{w}-bT_{0}+h(2T_{0}-T_{P})
-```
-
-```math
-
-```
-
-```math
-
-```
-
-```math
-
-```
-
 """
 
 # ╔═╡ 8cf8d53e-aa26-4376-8973-be73791b90f4
@@ -284,92 +314,46 @@ md"""
 ### Forma matricial
 
 ```math
-\begin{bmatrix} 
- C_{1}  &  0     &  0     & \dots  &  0      &  0      \\
--A^{-}  &  A^{+} &  0     & \dots  &  0      &  0      \\
- 0      & -A^{-} &  A^{+} & \ddots &  0      &  0      \\
+\begin{bmatrix}
+ 2      &  0     &  0     & \dots  &  0      &  0      \\
+-2      &  2     &  0     & \dots  &  0      &  0      \\
+ 0      & -2     &  2     & \ddots &  0      &  0      \\
 \vdots  & \ddots & \ddots & \ddots & \ddots  & \vdots  \\
- 0      &  0     &  0     & -A^{-} &  A^{+}  &   0     \\
- 0      &  0     &  0     &  0     & -A^{-}  &   A^{+} \\
+ 0      &  0     &  0     & -2     &  2      &  0     \\
+ 0      &  0     &  0     &  0     & -2      &  2 \\
 \end{bmatrix}
-\begin{bmatrix} 
-T_{1}    \\
-T_{2}    \\
-T_{3}    \\
+\begin{bmatrix}
+h_{1}    \\
+h_{2}    \\
+h_{3}    \\
 \vdots   \\
-T_{N-1}  \\
-T_{N}    \\
+h_{N-1}  \\
+h_{N}    \\
 \end{bmatrix}
 =
-\begin{bmatrix} 
-1 + 2A^{-}T_{0} \\
-1               \\
-1               \\
-\vdots          \\
-1               \\
-1               \\
+\begin{bmatrix}
+f_{0,1} + 2h(T_{0}) \\
+f_{1,2}     \\
+f_{2,3}      \\
+\vdots                       \\
+f_{N-2,N-1}  \\
+f_{N-1,N}    \\
 \end{bmatrix}
+```
+
+```math
+f_{i,j} = 2bT_{w} - b(T_{i}+T_{j})
 ```
 """
 
-# ╔═╡ e4428ffe-6180-4145-bed6-08ca5bd2f179
-# begin
-# 	# - Guess solution in temperature.
-# 	# - Compute RHS and solve for enthalpy.
-# 	# - Find temperature root of enthalpy.
-# 	# - Repeat.
-    
-# 	h(T) = cₚ * T
-# 	find_temperature(Tₖ, hₖ) = find_zero(T->h(T)-hₖ, Tₖ)
-# 	underrelax(aold, anew, α) = (1 - α) * anew + α * aold
-    
-# 	Aᵥ = π * R^2
-# 	Aₛ = 2 * π * R * space.δ
-# 	ṁ = ρ * u * Aᵥ
-    
-# 	α = 0.8
-# 	M = spdiagm(0 => ones(N), -1 => -ones(N-1))
-# 	C₁ = ĥ * Aₛ / ṁ
-    
-# 	# Random initialization of expected solution.
-# 	# Force boundary condition (fix this later with computed value!)
-# 	T_old = Tₛ * ones(N+1)
-# 	T_old[1] = Tₚ
-    
-# 	atol = 1.0e-08
-# 	maxiter = 100
-    
-# 	niter = 0
-# 	residuals = []
-# 	T_new = similar(T_old)
-    
-# 	# XXX: otherwise it always have a huge residual.
-# 	T_new[1] = Tₚ
-    
-# 	while niter < maxiter
-# 	    T_mid = (T_old[1:end-1] + T_old[2:end])/2
-# 	    x = C₁ * (Tₛ .- T_mid)
-    
-# 	    # Apply boundary condition (h1 = (C*(Ts - T*) + 2h0)/2).
-# 	    x[1] = (x[1] + 2 * h(Tₚ)) / 2
-    
-# 	    T_new[2:end] = broadcast(find_temperature, T_old[2:end], M \ x)
-# 	    T_old[2:end] = underrelax(T_old[2:end], T_new[2:end], α)
-    
-# 	    ε = maximum(abs2.(T_old - T_new))
-# 	    push!(residuals, ε)
-    
-# 	    if ε <= atol
-# 	        break
-# 	    end
-    
-# 	    niter += 1
-# 	end
-    
-# 	p = plot()
-# 	plot!(space.zc, solution.T)
-# 	plot!(space.zc, T_old[2:end])
-# end
+# ╔═╡ 7f826838-e7a7-4853-ac2e-d7ae6ca33da1
+md"""
+### Solução analítica
+
+aa [^1]
+
+[^1]: Neste caso a solução se aplica unicamente ao exemplo utilizado neste tópico. Isso se dá pela forma particular integrável da entalpia utilizada.
+"""
 
 # ╔═╡ 542763c5-b1d7-4e3f-b972-990f1d14fe39
 md"""
@@ -434,29 +418,33 @@ function cellwalls(L, δ)
 end
 
 # ╔═╡ e08d8341-f3a5-4ff1-b18e-19e9a0757b24
-function solvethermalpfr(c, N, ĥ)
+"Integra reator pistão no espaço das temperaturas."
+function solvethermalpfr(c, N, ĥ; immersed = false)
     δ = c.L / N
     r = c.R / 2δ
     a = (c.ρ * c.u * c.cₚ * r) / ĥ
-    
+
     A⁺ = (2a + 1) / (2c.Tₛ)
     A⁻ = (2a - 1) / (2c.Tₛ)
 
-    C₁ = A⁺ + A⁻
-    C₂ = 2A⁻ * c.Tₚ
-    
-    d₀ = +A⁺ * ones(N)
-    d₁ = -A⁻ * ones(N - 1)
     b = ones(N)
-    
-    d₀[1] = C₁
-    b[1] = 1 + C₂
+    b[1] = 1 + A⁻ * c.Tₚ
 
-    M = spdiagm(0 => d₀, -1 => d₁)
-    T = M \ b
+    M = spdiagm(-1 => -A⁻ * ones(N - 1),
+                 0 => +A⁺ * ones(N + 0))
 
-    z = cellwalls(c.L, δ)[1:end-1]
+    if immersed
+        z = cellwalls(c.L, δ)
+    else
+        M[1, 1] += A⁻
+        b[1] += A⁻ * c.Tₚ
+        z = zeros(N+1)
+        z[2:end] = cellcenters(c.L, δ)
+    end
 
+    T = similar(z)
+    T[1] = c.Tₚ
+    T[2:end] = M \ b
     return z, T
 end
 
@@ -500,7 +488,7 @@ function dittusboelter_Nu(Re, Pr, L, D; what = :heating)
     end
 
     @warnonly validate(Re, Pr, L, D)
-    
+
     n = (what == :heating) ? 0.4 : 0.4
     return 0.023 * Re^(4/5) * Pr^n
 end
@@ -509,13 +497,13 @@ end
 "Estima coeficient de troca convectiva do escoamento"
 function computehtc(c; method = :g)
     D = 2c.R
-    
+
     Pr = c.Pr
     Re = c.ρ * c.u * D / c.μ
 
     Nug = gnielinski_Nu(Re, Pr)
     Nud = dittusboelter_Nu(Re, Pr, c.L, D)
-    
+
     if Re > 3000
         Nu = (method == :g) ? Nug : Nub
     else
@@ -539,34 +527,119 @@ function computehtc(c; method = :g)
 end
 
 # ╔═╡ 74233232-e490-4d6e-b424-5228f0e680f6
-fig = let
+let
     case = "fluent-reference"
     # case = "constant-properties"
     data = readdlm("c01-reator-pistao/$(case)/postprocess.dat", Float64)
-    
+
+    immersed = true
     c = Conditions()
     ĥ = computehtc(c)
 
     fig, ax = reactorplot(; L = c.L)
-    
-    for N in [10, 100, 500]
-        z, T = solvethermalpfr(c, N, ĥ)
-        stairs!(ax, z, T, label = "N = $(N)", step = :post)
+    lines!(ax, data[:, 1], data[:, 2], color=:black, label = "CFD")
 
+    for N in [10, 100, 500]
+        z, T = solvethermalpfr(c, N, ĥ; immersed = immersed)
+        stairs!(ax, z, T; label = "N = $(N)", step = :center)
         global Tend = @sprintf("%.1f", T[end])
     end
 
-    lines!(ax, data[:, 1], data[:, 2], color=:black, label = "CFD")
-    
     ax.title = "Temperatura final = $(Tend) K"
     ax.yticks = range(300, 400, 6)
     ylims!(ax, (300, 400))
     axislegend(position = :rb)
     fig
+end
+
+# ╔═╡ e8b9773c-be88-4d68-8874-060945ed08bf
+figh, residuals = let
+    case = "fluent-reference"
+    # case = "constant-properties"
+    data = readdlm("c01-reator-pistao/$(case)/postprocess.dat", Float64)
+
+    c = Conditions()
+    ĥ = computehtc(c)
+
+    N = 20000
+    α = 0.6
+    atol = 1.0e-08
+    maxiter = 100
+
+    h(T) = c.cₚ * T
+    temperature(Tₖ, hₖ) = find_zero(T->h(T)-hₖ, Tₖ)
+    underrelax(aold, anew, α) = (1-α) * anew + α * aold
+
+    δ = c.L / N
+    r = c.R / 2δ
+    a = ĥ / (c.ρ * c.u * r)
+    Φ = 2a * c.Tₛ
+    h₀ = 2h(c.Tₚ)
+
+    z = cellwalls(c.L, δ)
+
+    T_old = c.Tₛ * ones(N+1)
+    T_new = similar(T_old)
+
+    T_old[1] = c.Tₚ
+    T_new[1] = c.Tₚ
+
+    b = zeros(N)
+    M = spdiagm(-1 => -2 * ones(N - 1),
+                 0 =>  2 * ones(N + 0))
+
+    niter = 1
+    residuals = -1ones(maxiter)
+
+    @time while niter < maxiter+1
+        b[1:end] = Φ .- a * (T_old[1:end-1] + T_old[2:end])
+        b[1] += h₀
+
+        T_new[2:end] = temperature.(T_old[2:end], M \ b)
+        T_old[2:end] = underrelax(T_old[2:end], T_new[2:end], α)
+        ε =  residuals[niter] = maximum(abs2.(T_old - T_new))
+
+        if ε <= atol
+            println("Converged after $(niter) iterations")
+            break
+        end
+
+        niter += 1
+    end
+
+    T = T_old
+
+    fig, ax = reactorplot(; L = c.L)
+    lines!(ax, data[:, 1], data[:, 2], color=:black, label = "CFD")
+    stairs!(ax, z, T; label = "N = $(N)", step = :center)
+    ax.title = "Temperatura final = $(@sprintf("%.1f", T[end])) K"
+    ax.yticks = range(300, 400, 6)
+    ylims!(ax, (300, 400))
+    axislegend(position = :rb)
+    fig, residuals
 end;
 
-# ╔═╡ 2a5c963b-80c4-4f31-a997-542cef9a2f03
-fig
+# ╔═╡ 11aadef3-2ab9-45f9-8e8b-f33c8f7d39e3
+figh
+
+# ╔═╡ 6e981934-8a73-4302-b810-f2ffb058eaf1
+let
+    # Improve axes limits/ticks!
+    r  = residuals[residuals .> 0]
+    n = length(r)
+    fig = Figure(resolution = (720, 500))
+    ax = Axis(fig[1, 1],
+              ylabel = "log10(r)",
+              xlabel = "Iteração")
+    xlims!(ax, (1, n))
+    lines!(ax, log10.(r))
+
+    ax.xticks = 0:5:n
+    ax.yticks = range(-8, 4, 13)
+    xlims!(ax, (0, n))
+    ylims!(ax, (-8, 4))
+    fig
+end
 
 # ╔═╡ f9b1527e-0d91-490b-95f6-13b649fe61db
 md"""
@@ -576,13 +649,18 @@ md"""
 # ╔═╡ Cell order:
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
 # ╟─53f1cba1-130f-4bb2-bf64-5e948b38b2c7
-# ╠═e08d8341-f3a5-4ff1-b18e-19e9a0757b24
-# ╠═74233232-e490-4d6e-b424-5228f0e680f6
-# ╟─2a5c963b-80c4-4f31-a997-542cef9a2f03
-# ╠═7c43c2e5-98da-4e35-8f06-1a301f02cfec
-# ╠═4ff853d4-6747-46ac-b569-55febe550a27
-# ╠═8cf8d53e-aa26-4376-8973-be73791b90f4
-# ╠═e4428ffe-6180-4145-bed6-08ca5bd2f179
+# ╟─53f95782-d138-409d-b0b0-04d98d432ee1
+# ╟─79a890f5-c324-4939-91f5-af33ca28bd95
+# ╟─86d9caa3-5b77-4f4a-888f-48d8423269ae
+# ╟─e08d8341-f3a5-4ff1-b18e-19e9a0757b24
+# ╟─74233232-e490-4d6e-b424-5228f0e680f6
+# ╟─7c43c2e5-98da-4e35-8f06-1a301f02cfec
+# ╟─4ff853d4-6747-46ac-b569-55febe550a27
+# ╟─8cf8d53e-aa26-4376-8973-be73791b90f4
+# ╟─7f826838-e7a7-4853-ac2e-d7ae6ca33da1
+# ╟─e8b9773c-be88-4d68-8874-060945ed08bf
+# ╟─11aadef3-2ab9-45f9-8e8b-f33c8f7d39e3
+# ╟─6e981934-8a73-4302-b810-f2ffb058eaf1
 # ╟─542763c5-b1d7-4e3f-b972-990f1d14fe39
 # ╟─1cf0a5eb-6f80-4105-8f21-a731583a7665
 # ╟─30f97d5b-e1de-4593-b451-1bd42156a4fc
