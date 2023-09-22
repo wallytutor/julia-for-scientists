@@ -19,6 +19,16 @@ begin
 
     import PlutoUI
     PlutoUI.TableOfContents(title="Tópicos")
+
+    macro warnonly(ex)
+        quote
+            try
+                $(esc(ex))
+            catch e
+                @warn e
+            end
+        end
+    end
 end
 
 # ╔═╡ e275b8ce-52b8-11ee-066f-3d20f8f1593e
@@ -424,7 +434,7 @@ end
 # ╔═╡ 74233232-e490-4d6e-b424-5228f0e680f6
 fig = let
     case = "fluent-reference"
-    # case = "constant-properties-3d"
+    # case = "constant-properties"
     data = readdlm("c01-reator-pistao/$(case)/postprocess.dat", Float64)
     
     c = Conditions()
@@ -451,21 +461,13 @@ end;
 # ╔═╡ 2a5c963b-80c4-4f31-a997-542cef9a2f03
 fig
 
-# ╔═╡ a537a56b-9b46-4363-b462-e92d02f2aa35
-macro warnonly(ex)
-    quote
-        try
-            $(esc(ex))
-        catch e
-            @warn e
-        end
-    end
-end
-
 # ╔═╡ f9b1527e-0d91-490b-95f6-13b649fe61db
 md"""
 ## Pacotes
 """
+
+# ╔═╡ 8b2b9bc2-1f4e-46ae-b265-cb85baeabb6f
+
 
 # ╔═╡ Cell order:
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
@@ -483,7 +485,7 @@ md"""
 # ╟─4ac709ca-586c-41f8-a239-90b4c885ad7e
 # ╟─8b69fbf0-73f8-4297-b810-7cc17486712e
 # ╟─cba4b197-9cbf-4c6d-9a5c-79dd212953dc
-# ╠═f9687d19-1fc9-40b1-97b1-365b80061a1b
-# ╟─a537a56b-9b46-4363-b462-e92d02f2aa35
+# ╟─f9687d19-1fc9-40b1-97b1-365b80061a1b
 # ╟─f9b1527e-0d91-490b-95f6-13b649fe61db
-# ╟─92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
+# ╠═8b2b9bc2-1f4e-46ae-b265-cb85baeabb6f
+# ╠═92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0

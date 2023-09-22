@@ -45,14 +45,15 @@ def plot_results(X, T):
 
 def main():
     """ Post-processing workflow. """
-    here = Path(__file__).parent.name
-    mesh = pv.read(f"VTK/{here}_10000/internal.vtu")
+    tend = "100000"
+    root = Path(__file__).parent
+    mesh = pv.read(root / f"VTK/{root.name}_{tend}/internal.vtu")
     df = tabulate(mesh, np.linspace(0.0, 0.0049, 10))
 
     # Downsample results, every 5 cm is enough!
     df = df.iloc[::1000]
-    df.to_csv("postprocess.dat", index=False, sep="\t",
-              header=None, float_format="%.6f")
+    df.to_csv(root / "postprocess.dat", index=False,
+              sep="\t", header=None, float_format="%.6f")
 
     plot_results(df["X"].to_numpy(), df["T"].to_numpy())
 

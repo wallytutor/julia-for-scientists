@@ -45,8 +45,9 @@ def plot_results(X, T):
 
 def main():
     """ Post-processing workflow. """
-    here = Path(__file__).parent.name
-    mesh = pv.read(f"VTK/{here}_5812/internal.vtu")
+    tend = "5812"
+    root = Path(__file__).parent
+    mesh = pv.read(root / f"VTK/{root.name}_{tend}/internal.vtu")
 
     # XXX: this case is 3D, averaring is TOO expensive, get
     # a single slice for averaging the validation data.
@@ -56,11 +57,10 @@ def main():
 
     # Downsample results, every 5 cm is enough!
     df = df.iloc[::1000]
-    df.to_csv("postprocess.dat", index=False, sep="\t",
-            header=None, float_format="%.6f")
+    df.to_csv(root / "postprocess.dat", index=False,
+              sep="\t", header=None, float_format="%.6f")
 
     plot_results(df["X"].to_numpy(), df["T"].to_numpy())
-
 
 if __name__ == "__main__":
     main()
