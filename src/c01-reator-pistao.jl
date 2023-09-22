@@ -18,7 +18,7 @@ begin
     using SparseArrays: spdiagm
 
     import PlutoUI
-    PlutoUI.TableOfContents(title="Tópicos")
+    toc = PlutoUI.TableOfContents(title="Tópicos")
 
     macro warnonly(ex)
         quote
@@ -29,6 +29,8 @@ begin
             end
         end
     end
+
+    toc
 end
 
 # ╔═╡ e275b8ce-52b8-11ee-066f-3d20f8f1593e
@@ -202,67 +204,172 @@ T_{N}    \\
 # ╔═╡ 7c43c2e5-98da-4e35-8f06-1a301f02cfec
 md"""
 ## Formulação na entalpia
+
+### Modelo do reator
+
+```math
+\rho{}u{}\frac{dh}{dz}=
+\hat{h}\frac{P}{A_{c}}(T_{w}-T)
+```
+
+### Formulação numérica
+
+```math
+\int_{h_P}^{h_N}\rho{}u{}c_{p}A_{c}dh=
+\int_{0}^{\delta}\hat{h}{P}(T_{w}-T)dz
+```
+
+Seguindo um procedimento de integração similar ao aplicado na formulação usando a temperatura chegamos a equação do fluxo
+
+```math
+h_{E} - h_{P}=
+bT_{w}-bT^{\star}
+```
+
+### Relação de interpolação
+
+```math
+T^{\star}=\frac{T_{E}+T_{P}}{2}
+```
+
+Aplicando-se esta expressão na forma numérica final, após manipulação chega-se à
+
+```math
+2h_{E} - 2h_{P}=
+2bT_{w}-bT_{E}-bT_{P}
+```
+
+Essa expressão permite a solução da entalpia e a atualização do campo de temperaturas se faz através da solução de uma equação não linear do tipo ``h(T_{P})-h_{P}=0`` por célula.
+"""
+
+# ╔═╡ 4ff853d4-6747-46ac-b569-55febe550a27
+md"""
+### Condição inicial
+
+A condição inicial é conhecida na interface e coincide com a temperatura que é usada para o cálculo do fluxo de calor ``T^{\star}`` localmente
+
+```math
+T^{\star}=T_{0}=\frac{T_{P}+T_{G}}{2}
+```
+
+Substituindo essa expressão na forma linear do problema para a célula na fronteira produz
+
+```math
+2h_{P} - 2h_{G} = 2bT_{w}-bT_{P}-bT_{G}
+```
+
+É mais conveniente expressar ``T_{G}=2T_{0}-T_{P}``, logo
+
+```math
+h_{P} = bT_{w}-bT_{0}+h(2T_{0}-T_{P})
+```
+
+```math
+
+```
+
+```math
+
+```
+
+```math
+
+```
+
+"""
+
+# ╔═╡ 8cf8d53e-aa26-4376-8973-be73791b90f4
+md"""
+
+### Forma matricial
+
+```math
+\begin{bmatrix} 
+ C_{1}  &  0     &  0     & \dots  &  0      &  0      \\
+-A^{-}  &  A^{+} &  0     & \dots  &  0      &  0      \\
+ 0      & -A^{-} &  A^{+} & \ddots &  0      &  0      \\
+\vdots  & \ddots & \ddots & \ddots & \ddots  & \vdots  \\
+ 0      &  0     &  0     & -A^{-} &  A^{+}  &   0     \\
+ 0      &  0     &  0     &  0     & -A^{-}  &   A^{+} \\
+\end{bmatrix}
+\begin{bmatrix} 
+T_{1}    \\
+T_{2}    \\
+T_{3}    \\
+\vdots   \\
+T_{N-1}  \\
+T_{N}    \\
+\end{bmatrix}
+=
+\begin{bmatrix} 
+1 + 2A^{-}T_{0} \\
+1               \\
+1               \\
+\vdots          \\
+1               \\
+1               \\
+\end{bmatrix}
+```
 """
 
 # ╔═╡ e4428ffe-6180-4145-bed6-08ca5bd2f179
-# ╠═╡ disabled = true
-#=╠═╡
-# - Guess solution in temperature.
-# - Compute RHS and solve for enthalpy.
-# - Find temperature root of enthalpy.
-# - Repeat.
-
-h(T) = cₚ * T
-find_temperature(Tₖ, hₖ) = find_zero(T->h(T)-hₖ, Tₖ)
-underrelax(aold, anew, α) = (1 - α) * anew + α * aold
-
-Aᵥ = π * R^2
-Aₛ = 2 * π * R * space.δ
-ṁ = ρ * u * Aᵥ
-
-α = 0.8
-M = spdiagm(0 => ones(N), -1 => -ones(N-1))
-C₁ = ĥ * Aₛ / ṁ
-
-# Random initialization of expected solution.
-# Force boundary condition (fix this later with computed value!)
-T_old = Tₛ * ones(N+1)
-T_old[1] = Tₚ
-
-atol = 1.0e-08
-maxiter = 100
-
-niter = 0
-residuals = []
-T_new = similar(T_old)
-
-# XXX: otherwise it always have a huge residual.
-T_new[1] = Tₚ
-
-while niter < maxiter
-    T_mid = (T_old[1:end-1] + T_old[2:end])/2
-    x = C₁ * (Tₛ .- T_mid)
-
-    # Apply boundary condition (h1 = (C*(Ts - T*) + 2h0)/2).
-    x[1] = (x[1] + 2 * h(Tₚ)) / 2
-
-    T_new[2:end] = broadcast(find_temperature, T_old[2:end], M \ x)
-    T_old[2:end] = underrelax(T_old[2:end], T_new[2:end], α)
-
-    ε = maximum(abs2.(T_old - T_new))
-    push!(residuals, ε)
-
-    if ε <= atol
-        break
-    end
-
-    niter += 1
-end
-
-p = plot()
-plot!(space.zc, solution.T)
-plot!(space.zc, T_old[2:end])
-  ╠═╡ =#
+# begin
+# 	# - Guess solution in temperature.
+# 	# - Compute RHS and solve for enthalpy.
+# 	# - Find temperature root of enthalpy.
+# 	# - Repeat.
+    
+# 	h(T) = cₚ * T
+# 	find_temperature(Tₖ, hₖ) = find_zero(T->h(T)-hₖ, Tₖ)
+# 	underrelax(aold, anew, α) = (1 - α) * anew + α * aold
+    
+# 	Aᵥ = π * R^2
+# 	Aₛ = 2 * π * R * space.δ
+# 	ṁ = ρ * u * Aᵥ
+    
+# 	α = 0.8
+# 	M = spdiagm(0 => ones(N), -1 => -ones(N-1))
+# 	C₁ = ĥ * Aₛ / ṁ
+    
+# 	# Random initialization of expected solution.
+# 	# Force boundary condition (fix this later with computed value!)
+# 	T_old = Tₛ * ones(N+1)
+# 	T_old[1] = Tₚ
+    
+# 	atol = 1.0e-08
+# 	maxiter = 100
+    
+# 	niter = 0
+# 	residuals = []
+# 	T_new = similar(T_old)
+    
+# 	# XXX: otherwise it always have a huge residual.
+# 	T_new[1] = Tₚ
+    
+# 	while niter < maxiter
+# 	    T_mid = (T_old[1:end-1] + T_old[2:end])/2
+# 	    x = C₁ * (Tₛ .- T_mid)
+    
+# 	    # Apply boundary condition (h1 = (C*(Ts - T*) + 2h0)/2).
+# 	    x[1] = (x[1] + 2 * h(Tₚ)) / 2
+    
+# 	    T_new[2:end] = broadcast(find_temperature, T_old[2:end], M \ x)
+# 	    T_old[2:end] = underrelax(T_old[2:end], T_new[2:end], α)
+    
+# 	    ε = maximum(abs2.(T_old - T_new))
+# 	    push!(residuals, ε)
+    
+# 	    if ε <= atol
+# 	        break
+# 	    end
+    
+# 	    niter += 1
+# 	end
+    
+# 	p = plot()
+# 	plot!(space.zc, solution.T)
+# 	plot!(space.zc, T_old[2:end])
+# end
 
 # ╔═╡ 542763c5-b1d7-4e3f-b972-990f1d14fe39
 md"""
@@ -466,16 +573,15 @@ md"""
 ## Pacotes
 """
 
-# ╔═╡ 8b2b9bc2-1f4e-46ae-b265-cb85baeabb6f
-
-
 # ╔═╡ Cell order:
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
 # ╟─53f1cba1-130f-4bb2-bf64-5e948b38b2c7
 # ╠═e08d8341-f3a5-4ff1-b18e-19e9a0757b24
 # ╠═74233232-e490-4d6e-b424-5228f0e680f6
 # ╟─2a5c963b-80c4-4f31-a997-542cef9a2f03
-# ╟─7c43c2e5-98da-4e35-8f06-1a301f02cfec
+# ╠═7c43c2e5-98da-4e35-8f06-1a301f02cfec
+# ╠═4ff853d4-6747-46ac-b569-55febe550a27
+# ╠═8cf8d53e-aa26-4376-8973-be73791b90f4
 # ╠═e4428ffe-6180-4145-bed6-08ca5bd2f179
 # ╟─542763c5-b1d7-4e3f-b972-990f1d14fe39
 # ╟─1cf0a5eb-6f80-4105-8f21-a731583a7665
@@ -487,5 +593,4 @@ md"""
 # ╟─cba4b197-9cbf-4c6d-9a5c-79dd212953dc
 # ╟─f9687d19-1fc9-40b1-97b1-365b80061a1b
 # ╟─f9b1527e-0d91-490b-95f6-13b649fe61db
-# ╠═8b2b9bc2-1f4e-46ae-b265-cb85baeabb6f
-# ╠═92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
+# ╟─92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
