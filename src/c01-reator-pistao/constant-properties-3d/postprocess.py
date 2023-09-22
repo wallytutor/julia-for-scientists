@@ -46,7 +46,7 @@ def plot_results(X, T):
 def main():
     """ Post-processing workflow. """
     here = Path(__file__).parent.name
-    mesh = pv.read(f"VTK/{here}_4291/internal.vtu")
+    mesh = pv.read(f"VTK/{here}_5812/internal.vtu")
 
     # XXX: this case is 3D, averaring is TOO expensive, get
     # a single slice for averaging the validation data.
