@@ -16,6 +16,7 @@ begin
     using Printf
     using Roots
     using SparseArrays: spdiagm
+    using SparseArrays: SparseMatrixCSC
 
     import PlutoUI
     toc = PlutoUI.TableOfContents(title="Tópicos")
@@ -151,22 +152,19 @@ A^{+}T_{E}=A^{-}T_{P} + 1
 ```math
 A^{\pm} = \frac{2a \pm 1}{2T_{w}}
 ```
-"""
 
-# ╔═╡ 53f95782-d138-409d-b0b0-04d98d432ee1
-md"""
-### Sistema com condição imersa
+### Condição inicial
 
-#### Condição inicial
+Sistema com condição imersa
 
 ```math
 A^{+}T_{1}=1 + A^{-}T_{0}
 ```
 
-#### Forma matricial
+### Forma matricial
 
 ```math
-\begin{bmatrix}
+\begin{bmatrix} 
  A^{+}  &  0     &  0     & \dots  &  0      &  0      \\
 -A^{-}  &  A^{+} &  0     & \dots  &  0      &  0      \\
  0      & -A^{-} &  A^{+} & \ddots &  0      &  0      \\
@@ -174,7 +172,7 @@ A^{+}T_{1}=1 + A^{-}T_{0}
  0      &  0     &  0     & -A^{-} &  A^{+}  &   0     \\
  0      &  0     &  0     &  0     & -A^{-}  &   A^{+} \\
 \end{bmatrix}
-\begin{bmatrix}
+\begin{bmatrix} 
 T_{1}    \\
 T_{2}    \\
 T_{3}    \\
@@ -183,57 +181,8 @@ T_{N-1}  \\
 T_{N}    \\
 \end{bmatrix}
 =
-\begin{bmatrix}
+\begin{bmatrix} 
 1 + A^{-}T_{0}  \\
-1               \\
-1               \\
-\vdots          \\
-1               \\
-1               \\
-\end{bmatrix}
-```
-"""
-
-# ╔═╡ 79a890f5-c324-4939-91f5-af33ca28bd95
-md"""
-### Sistema com célula fantasma
-
-#### Condição inicial
-
-```math
-A^{+}T_{P}=A^{-}T_{G} + 1
-```
-
-```math
-A^{+}T_{P}=A^{-}(2T_{0}-T_{P}) + 1
-```
-
-```math
-(A^{+}+A^{-})T_{P}=C_{1}T_{P}=1 + 2A^{-}T_{0}
-```
-
-#### Forma matricial
-
-```math
-\begin{bmatrix}
- C_{1}  &  0     &  0     & \dots  &  0      &  0      \\
--A^{-}  &  A^{+} &  0     & \dots  &  0      &  0      \\
- 0      & -A^{-} &  A^{+} & \ddots &  0      &  0      \\
-\vdots  & \ddots & \ddots & \ddots & \ddots  & \vdots  \\
- 0      &  0     &  0     & -A^{-} &  A^{+}  &   0     \\
- 0      &  0     &  0     &  0     & -A^{-}  &   A^{+} \\
-\end{bmatrix}
-\begin{bmatrix}
-T_{1}    \\
-T_{2}    \\
-T_{3}    \\
-\vdots   \\
-T_{N-1}  \\
-T_{N}    \\
-\end{bmatrix}
-=
-\begin{bmatrix}
-1 + 2A^{-}T_{0} \\
 1               \\
 1               \\
 \vdots          \\
@@ -314,7 +263,7 @@ md"""
 ### Forma matricial
 
 ```math
-\begin{bmatrix}
+\begin{bmatrix} 
  2      &  0     &  0     & \dots  &  0      &  0      \\
 -2      &  2     &  0     & \dots  &  0      &  0      \\
  0      & -2     &  2     & \ddots &  0      &  0      \\
@@ -322,7 +271,7 @@ md"""
  0      &  0     &  0     & -2     &  2      &  0     \\
  0      &  0     &  0     &  0     & -2      &  2 \\
 \end{bmatrix}
-\begin{bmatrix}
+\begin{bmatrix} 
 h_{1}    \\
 h_{2}    \\
 h_{3}    \\
@@ -331,7 +280,7 @@ h_{N-1}  \\
 h_{N}    \\
 \end{bmatrix}
 =
-\begin{bmatrix}
+\begin{bmatrix} 
 f_{0,1} + 2h(T_{0}) \\
 f_{1,2}     \\
 f_{2,3}      \\
@@ -354,6 +303,80 @@ aa [^1]
 
 [^1]: Neste caso a solução se aplica unicamente ao exemplo utilizado neste tópico. Isso se dá pela forma particular integrável da entalpia utilizada.
 """
+
+# ╔═╡ eecddd3e-81b6-452b-876d-fd8e76f96684
+struct EnthalpyPFR
+    h::Function
+    
+    N::Int64
+    M::Int64
+    α::Float64
+    ε::Float64
+    
+    T_old::Vector{Float64}
+    T_new::Vector{Float64}
+    
+    A::SparseMatrixCSC{Float64, Int64}
+    b::Vector{Float64}
+
+    a::Float64
+    Φ::Float64
+    h₀::Float64
+    
+    function EnthalpyPFR(;
+        h::Function,
+        ρ::Float64,
+        u::Float64,
+        r::Float64,
+        ĥ::Float64,
+    
+        Tₚ::Float64,
+        Tₛ::Float64,
+    
+        N::Int64 = 20000,
+        M::Int64 = 100,
+        α::Float64 = 0.6,
+        ε = 1.0e-08
+    )
+        T_old = Tₛ * ones(N+1)
+        T_new = similar(T_old)
+        
+        T_old[1] = Tₚ
+        T_new[1] = Tₚ
+
+        b = zeros(N)
+        A = spdiagm(-1 => -2 * ones(N - 1),
+                     0 =>  2 * ones(N + 0))
+
+        a = ĥ / (ρ * u * r)
+        Φ = 2a * Tₛ
+        h₀ = 2h(Tₚ)
+        
+        new(h, N, M, α, ε, T_new, T_old, A, b, a, Φ, h₀)
+    end
+end
+
+# ╔═╡ fb8a77ab-5072-44a7-a94f-5dbb5d0b34ce
+function underrelax(aold, anew, α)
+    return (1-α) * anew + α * aold
+end
+
+# ╔═╡ b4ce7c35-b705-43e6-aee0-8bb4bea3aa7e
+function temperature(s::EnthalpyPFR)
+    f(Tₖ, hₖ) = find_zero(T->s.h(T)-hₖ, Tₖ)
+    return f.(s.T_old[2:end], s.A \ s.b)
+end
+
+# ╔═╡ aef93e07-e205-441c-b930-0ed6a193dabe
+function iterate(s::EnthalpyPFR)
+    s.b[1:end] = s.Φ .- s.a * (s.T_old[1:end-1] + s.T_old[2:end])
+    s.b[1] += s.h₀
+    
+    s.T_new[2:end] = temperature(s)
+    s.T_old[2:end] = underrelax(s.T_old[2:end], s.T_new[2:end], s.α)
+
+    return maximum(abs2.(s.T_old-s.T_new))
+end
 
 # ╔═╡ 542763c5-b1d7-4e3f-b972-990f1d14fe39
 md"""
@@ -405,25 +428,25 @@ begin
     """ Conditions
 end
 
-# ╔═╡ 03dc6676-49f2-486d-a7f2-deac6ce83f29
-"Coordenadas dos centros das células [m]"
-function cellcenters(L, δ)
+# ╔═╡ 96e44c91-06c3-4b9f-bdaa-55919d2e13f0
+"Coordenadas dos limites das células [m]"
+function cellwalls(L, δ)
     return collect(0.5δ:δ:L-0.5δ)
 end
 
 # ╔═╡ 530a7c51-e3ad-429a-890f-136fa63ff404
-"Coordenadas dos limites das células [m]"
-function cellwalls(L, δ)
+"Coordenadas dos centros das células [m]"
+function cellcenters(L, δ)
     return collect(0.0:δ:L)
 end
 
 # ╔═╡ e08d8341-f3a5-4ff1-b18e-19e9a0757b24
 "Integra reator pistão no espaço das temperaturas."
-function solvethermalpfr(c, N, ĥ; immersed = false)
+function solvethermalpfr(c, N, ĥ)
     δ = c.L / N
     r = c.R / 2δ
     a = (c.ρ * c.u * c.cₚ * r) / ĥ
-
+    
     A⁺ = (2a + 1) / (2c.Tₛ)
     A⁻ = (2a - 1) / (2c.Tₛ)
 
@@ -432,19 +455,13 @@ function solvethermalpfr(c, N, ĥ; immersed = false)
 
     M = spdiagm(-1 => -A⁻ * ones(N - 1),
                  0 => +A⁺ * ones(N + 0))
-
-    if immersed
-        z = cellwalls(c.L, δ)
-    else
-        M[1, 1] += A⁻
-        b[1] += A⁻ * c.Tₚ
-        z = zeros(N+1)
-        z[2:end] = cellcenters(c.L, δ)
-    end
-
+    
+    z = cellcenters(c.L, δ)
     T = similar(z)
+
     T[1] = c.Tₚ
     T[2:end] = M \ b
+
     return z, T
 end
 
@@ -488,7 +505,7 @@ function dittusboelter_Nu(Re, Pr, L, D; what = :heating)
     end
 
     @warnonly validate(Re, Pr, L, D)
-
+    
     n = (what == :heating) ? 0.4 : 0.4
     return 0.023 * Re^(4/5) * Pr^n
 end
@@ -497,13 +514,13 @@ end
 "Estima coeficient de troca convectiva do escoamento"
 function computehtc(c; method = :g)
     D = 2c.R
-
+    
     Pr = c.Pr
     Re = c.ρ * c.u * D / c.μ
 
     Nug = gnielinski_Nu(Re, Pr)
     Nud = dittusboelter_Nu(Re, Pr, c.L, D)
-
+    
     if Re > 3000
         Nu = (method == :g) ? Nug : Nub
     else
@@ -531,18 +548,18 @@ let
     case = "fluent-reference"
     # case = "constant-properties"
     data = readdlm("c01-reator-pistao/$(case)/postprocess.dat", Float64)
-
-    immersed = true
+    
     c = Conditions()
     ĥ = computehtc(c)
 
     fig, ax = reactorplot(; L = c.L)
     lines!(ax, data[:, 1], data[:, 2], color=:black, label = "CFD")
-
+    Tend = -1
+    
     for N in [10, 100, 500]
-        z, T = solvethermalpfr(c, N, ĥ; immersed = immersed)
+        z, T = solvethermalpfr(c, N, ĥ)
         stairs!(ax, z, T; label = "N = $(N)", step = :center)
-        global Tend = @sprintf("%.1f", T[end])
+        Tend = @sprintf("%.1f", T[end])
     end
 
     ax.title = "Temperatura final = $(Tend) K"
@@ -557,57 +574,45 @@ figh, residuals = let
     case = "fluent-reference"
     # case = "constant-properties"
     data = readdlm("c01-reator-pistao/$(case)/postprocess.dat", Float64)
-
+    
     c = Conditions()
-    ĥ = computehtc(c)
 
     N = 20000
-    α = 0.6
-    atol = 1.0e-08
-    maxiter = 100
-
-    h(T) = c.cₚ * T
-    temperature(Tₖ, hₖ) = find_zero(T->h(T)-hₖ, Tₖ)
-    underrelax(aold, anew, α) = (1-α) * anew + α * aold
-
     δ = c.L / N
-    r = c.R / 2δ
-    a = ĥ / (c.ρ * c.u * r)
-    Φ = 2a * c.Tₛ
-    h₀ = 2h(c.Tₚ)
-
-    z = cellwalls(c.L, δ)
-
-    T_old = c.Tₛ * ones(N+1)
-    T_new = similar(T_old)
-
-    T_old[1] = c.Tₚ
-    T_new[1] = c.Tₚ
-
-    b = zeros(N)
-    M = spdiagm(-1 => -2 * ones(N - 1),
-                 0 =>  2 * ones(N + 0))
-
+    
+    s = EnthalpyPFR(;
+        h = (T) -> c.cₚ * T,
+        ρ = c.ρ,
+        u = c.u,
+        r = c.R / 2δ,
+        ĥ = computehtc(c),
+    
+        Tₚ = c.Tₚ,
+        Tₛ = c.Tₛ,
+    
+        N = 20000,
+        M = 100,
+        α = 0.6,
+        ε = 1.0e-08
+    )
+    
+    z = cellcenters(c.L, δ)
+    
     niter = 1
-    residuals = -1ones(maxiter)
+    residuals = -1ones(s.M)
 
-    @time while niter < maxiter+1
-        b[1:end] = Φ .- a * (T_old[1:end-1] + T_old[2:end])
-        b[1] += h₀
-
-        T_new[2:end] = temperature.(T_old[2:end], M \ b)
-        T_old[2:end] = underrelax(T_old[2:end], T_new[2:end], α)
-        ε =  residuals[niter] = maximum(abs2.(T_old - T_new))
-
-        if ε <= atol
+    @time while niter < s.M+1
+        ε = residuals[niter] = iterate(s)
+    
+        if ε <= s.ε
             println("Converged after $(niter) iterations")
             break
         end
-
+    
         niter += 1
     end
 
-    T = T_old
+    T = s.T_old
 
     fig, ax = reactorplot(; L = c.L)
     lines!(ax, data[:, 1], data[:, 2], color=:black, label = "CFD")
@@ -649,22 +654,24 @@ md"""
 # ╔═╡ Cell order:
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
 # ╟─53f1cba1-130f-4bb2-bf64-5e948b38b2c7
-# ╟─53f95782-d138-409d-b0b0-04d98d432ee1
-# ╟─79a890f5-c324-4939-91f5-af33ca28bd95
 # ╟─86d9caa3-5b77-4f4a-888f-48d8423269ae
-# ╟─e08d8341-f3a5-4ff1-b18e-19e9a0757b24
-# ╟─74233232-e490-4d6e-b424-5228f0e680f6
+# ╠═e08d8341-f3a5-4ff1-b18e-19e9a0757b24
+# ╠═74233232-e490-4d6e-b424-5228f0e680f6
 # ╟─7c43c2e5-98da-4e35-8f06-1a301f02cfec
 # ╟─4ff853d4-6747-46ac-b569-55febe550a27
 # ╟─8cf8d53e-aa26-4376-8973-be73791b90f4
 # ╟─7f826838-e7a7-4853-ac2e-d7ae6ca33da1
-# ╟─e8b9773c-be88-4d68-8874-060945ed08bf
+# ╠═eecddd3e-81b6-452b-876d-fd8e76f96684
+# ╠═fb8a77ab-5072-44a7-a94f-5dbb5d0b34ce
+# ╠═b4ce7c35-b705-43e6-aee0-8bb4bea3aa7e
+# ╠═aef93e07-e205-441c-b930-0ed6a193dabe
+# ╠═e8b9773c-be88-4d68-8874-060945ed08bf
 # ╟─11aadef3-2ab9-45f9-8e8b-f33c8f7d39e3
 # ╟─6e981934-8a73-4302-b810-f2ffb058eaf1
 # ╟─542763c5-b1d7-4e3f-b972-990f1d14fe39
 # ╟─1cf0a5eb-6f80-4105-8f21-a731583a7665
 # ╟─30f97d5b-e1de-4593-b451-1bd42156a4fc
-# ╟─03dc6676-49f2-486d-a7f2-deac6ce83f29
+# ╟─96e44c91-06c3-4b9f-bdaa-55919d2e13f0
 # ╟─530a7c51-e3ad-429a-890f-136fa63ff404
 # ╟─4ac709ca-586c-41f8-a239-90b4c885ad7e
 # ╟─8b69fbf0-73f8-4297-b810-7cc17486712e
