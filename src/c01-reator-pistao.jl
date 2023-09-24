@@ -14,6 +14,7 @@ begin
     using DelimitedFiles
     using DocStringExtensions
     using Printf
+    using RollingFunctions
     using Roots
     using SparseArrays: spdiagm
     using SparseArrays: SparseMatrixCSC
@@ -164,7 +165,7 @@ A^{+}T_{1}=1 + A^{-}T_{0}
 ### Forma matricial
 
 ```math
-\begin{bmatrix} 
+\begin{bmatrix}
  A^{+}  &  0     &  0     & \dots  &  0      &  0      \\
 -A^{-}  &  A^{+} &  0     & \dots  &  0      &  0      \\
  0      & -A^{-} &  A^{+} & \ddots &  0      &  0      \\
@@ -172,7 +173,7 @@ A^{+}T_{1}=1 + A^{-}T_{0}
  0      &  0     &  0     & -A^{-} &  A^{+}  &   0     \\
  0      &  0     &  0     &  0     & -A^{-}  &   A^{+} \\
 \end{bmatrix}
-\begin{bmatrix} 
+\begin{bmatrix}
 T_{1}    \\
 T_{2}    \\
 T_{3}    \\
@@ -181,7 +182,7 @@ T_{N-1}  \\
 T_{N}    \\
 \end{bmatrix}
 =
-\begin{bmatrix} 
+\begin{bmatrix}
 1 + A^{-}T_{0}  \\
 1               \\
 1               \\
@@ -263,7 +264,7 @@ md"""
 ### Forma matricial
 
 ```math
-\begin{bmatrix} 
+\begin{bmatrix}
  2      &  0     &  0     & \dots  &  0      &  0      \\
 -2      &  2     &  0     & \dots  &  0      &  0      \\
  0      & -2     &  2     & \ddots &  0      &  0      \\
@@ -271,7 +272,7 @@ md"""
  0      &  0     &  0     & -2     &  2      &  0     \\
  0      &  0     &  0     &  0     & -2      &  2 \\
 \end{bmatrix}
-\begin{bmatrix} 
+\begin{bmatrix}
 h_{1}    \\
 h_{2}    \\
 h_{3}    \\
@@ -280,7 +281,7 @@ h_{N-1}  \\
 h_{N}    \\
 \end{bmatrix}
 =
-\begin{bmatrix} 
+\begin{bmatrix}
 f_{0,1} + 2h(T_{0}) \\
 f_{1,2}     \\
 f_{2,3}      \\
@@ -303,80 +304,6 @@ aa [^1]
 
 [^1]: Neste caso a solução se aplica unicamente ao exemplo utilizado neste tópico. Isso se dá pela forma particular integrável da entalpia utilizada.
 """
-
-# ╔═╡ eecddd3e-81b6-452b-876d-fd8e76f96684
-struct EnthalpyPFR
-    h::Function
-    
-    N::Int64
-    M::Int64
-    α::Float64
-    ε::Float64
-    
-    T_old::Vector{Float64}
-    T_new::Vector{Float64}
-    
-    A::SparseMatrixCSC{Float64, Int64}
-    b::Vector{Float64}
-
-    a::Float64
-    Φ::Float64
-    h₀::Float64
-    
-    function EnthalpyPFR(;
-        h::Function,
-        ρ::Float64,
-        u::Float64,
-        r::Float64,
-        ĥ::Float64,
-    
-        Tₚ::Float64,
-        Tₛ::Float64,
-    
-        N::Int64 = 20000,
-        M::Int64 = 100,
-        α::Float64 = 0.6,
-        ε = 1.0e-08
-    )
-        T_old = Tₛ * ones(N+1)
-        T_new = similar(T_old)
-        
-        T_old[1] = Tₚ
-        T_new[1] = Tₚ
-
-        b = zeros(N)
-        A = spdiagm(-1 => -2 * ones(N - 1),
-                     0 =>  2 * ones(N + 0))
-
-        a = ĥ / (ρ * u * r)
-        Φ = 2a * Tₛ
-        h₀ = 2h(Tₚ)
-        
-        new(h, N, M, α, ε, T_new, T_old, A, b, a, Φ, h₀)
-    end
-end
-
-# ╔═╡ fb8a77ab-5072-44a7-a94f-5dbb5d0b34ce
-function underrelax(aold, anew, α)
-    return (1-α) * anew + α * aold
-end
-
-# ╔═╡ b4ce7c35-b705-43e6-aee0-8bb4bea3aa7e
-function temperature(s::EnthalpyPFR)
-    f(Tₖ, hₖ) = find_zero(T->s.h(T)-hₖ, Tₖ)
-    return f.(s.T_old[2:end], s.A \ s.b)
-end
-
-# ╔═╡ aef93e07-e205-441c-b930-0ed6a193dabe
-function iterate(s::EnthalpyPFR)
-    s.b[1:end] = s.Φ .- s.a * (s.T_old[1:end-1] + s.T_old[2:end])
-    s.b[1] += s.h₀
-    
-    s.T_new[2:end] = temperature(s)
-    s.T_old[2:end] = underrelax(s.T_old[2:end], s.T_new[2:end], s.α)
-
-    return maximum(abs2.(s.T_old-s.T_new))
-end
 
 # ╔═╡ 542763c5-b1d7-4e3f-b972-990f1d14fe39
 md"""
@@ -446,7 +373,7 @@ function solvethermalpfr(c, N, ĥ)
     δ = c.L / N
     r = c.R / 2δ
     a = (c.ρ * c.u * c.cₚ * r) / ĥ
-    
+
     A⁺ = (2a + 1) / (2c.Tₛ)
     A⁻ = (2a - 1) / (2c.Tₛ)
 
@@ -455,7 +382,7 @@ function solvethermalpfr(c, N, ĥ)
 
     M = spdiagm(-1 => -A⁻ * ones(N - 1),
                  0 => +A⁺ * ones(N + 0))
-    
+
     z = cellcenters(c.L, δ)
     T = similar(z)
 
@@ -463,6 +390,111 @@ function solvethermalpfr(c, N, ĥ)
     T[2:end] = M \ b
 
     return z, T
+end
+
+# ╔═╡ eecddd3e-81b6-452b-876d-fd8e76f96684
+"Representa um reator pistão formulado na entalpia.
+
+$(TYPEDFIELDS)
+"
+struct EnthalpyPFR
+    "Vetor das coordenadas das células do reator."
+    z::Vector{Float64}
+
+    "Temperatura do fluido das células do reator."
+    T::Vector{Float64}
+
+    "Vetor para estocagem dos residuos nas iterações."
+    residual::Vector{Float64}
+
+    function (model::EnthalpyPFR)()
+        return model.z, model.T, model.residual
+    end
+
+    """
+    Construtor interno do modelo de reator.
+
+        h::Function
+        ρ  : Densidade do fluido [kg/m³].
+        u  : Velocidade do fluido [m/s].
+        r  : Relação de áreas [-].
+        ĥ  : Coeficiente de troca convectiva [W/(m².K)].
+        L  : Comprimento do reator [m].
+        Tₚ : Temperatura inicial do fluido [K].
+        Tₛ : Temperatura da superfície do reator [K].
+        N  : Número de células no sistema, incluindo limites.
+        M  : Máximo número de iterações para a solução.
+        α  : Fator de relaxação da solução entre iterações.
+        ε  : Tolerância absoluta da solução.
+    """
+    function EnthalpyPFR(;
+        h::Function,
+        ρ::Float64,
+        u::Float64,
+        r::Float64,
+        ĥ::Float64,
+        L::Float64,
+        Tₚ::Float64,
+        Tₛ::Float64,
+        N::Int64,
+        M::Int64 = 100,
+        α::Float64 = 0.4,
+        ε::Float64 = 1.0e-10
+    )
+        # Alocação das coordenadas do sistema.
+        z = cellcenters(L, L/N)
+
+        # Alocação da solução com a condição inicial.
+        T = Tₚ * ones(N+1)
+
+        # Alocação a matrix de diferenças.
+        A = 2spdiagm(-1 => -ones(N-1), 0 =>  ones(N))
+
+        # Constante do modelo.
+        a = ĥ / (ρ * u * r)
+
+        # Alocação do vetor do lado direito da equação.
+        b = (2a * Tₛ) * ones(N)
+        b[1] += 2h(Tₚ)
+
+        # Aloca e inicia em negativo o vetor de residuos. Isso
+        # é interessante para o gráfico aonde podemos eliminar
+        # os elementos negativos que não tem sentido físico.
+        residual = -ones(M)
+
+        # Resolve o problema iterativamente.
+        niter = 0
+
+        @time while (niter < M)
+            niter += 1
+
+            # Calcula o vetor `b` do lado direito e resolve o sistema. O bloco
+            # comentado abaixo implementa uma versão com `RollingFunctions` que
+            # acaba sendo muito mais lenta dada uma alocação maior de memória.
+            # h̄ = A \ (b - a * rolling(sum, T, 2))
+            h̄ = A \ (b - a * (T[1:end-1] + T[2:end]))
+
+            # Encontra as novas temperaturas resolvendo uma equação não-linear
+            # para cada nova entalpia calculada resolvendo `A*h=b`.
+            U = map((Tₖ, hₖ)->find_zero(T->h(T)-hₖ, Tₖ), T[2:end], h̄)
+
+            # Relaxa a solução para evitar atualizações bruscas. Como o cálculo
+            # se faz por `(1-α)*U + α*T`, podemos reescrever a expressão como
+            # `U+α*(T-U) = anew+α*Δ`, aonde o incremento Δ pode ser reutilizado
+            # para o cálculo do resíduo que avalia a máxima atualização.
+            Δ = T[2:end] - U
+            T[2:end] = U + α * Δ
+            residual[niter] = maximum(abs.(Δ))
+
+            # Verifica status da convergência.
+            if (residual[niter] <= ε)
+                println("Converged after $(niter) iterations")
+                break
+            end
+        end
+
+        return new(z, T, residual)
+    end
 end
 
 # ╔═╡ 4ac709ca-586c-41f8-a239-90b4c885ad7e
@@ -505,7 +537,7 @@ function dittusboelter_Nu(Re, Pr, L, D; what = :heating)
     end
 
     @warnonly validate(Re, Pr, L, D)
-    
+
     n = (what == :heating) ? 0.4 : 0.4
     return 0.023 * Re^(4/5) * Pr^n
 end
@@ -514,13 +546,13 @@ end
 "Estima coeficient de troca convectiva do escoamento"
 function computehtc(c; method = :g)
     D = 2c.R
-    
+
     Pr = c.Pr
     Re = c.ρ * c.u * D / c.μ
 
     Nug = gnielinski_Nu(Re, Pr)
     Nud = dittusboelter_Nu(Re, Pr, c.L, D)
-    
+
     if Re > 3000
         Nu = (method == :g) ? Nug : Nub
     else
@@ -548,14 +580,14 @@ let
     case = "fluent-reference"
     # case = "constant-properties"
     data = readdlm("c01-reator-pistao/$(case)/postprocess.dat", Float64)
-    
+
     c = Conditions()
     ĥ = computehtc(c)
 
     fig, ax = reactorplot(; L = c.L)
     lines!(ax, data[:, 1], data[:, 2], color=:black, label = "CFD")
     Tend = -1
-    
+
     for N in [10, 100, 500]
         z, T = solvethermalpfr(c, N, ĥ)
         stairs!(ax, z, T; label = "N = $(N)", step = :center)
@@ -574,45 +606,24 @@ figh, residuals = let
     case = "fluent-reference"
     # case = "constant-properties"
     data = readdlm("c01-reator-pistao/$(case)/postprocess.dat", Float64)
-    
+
     c = Conditions()
 
-    N = 20000
-    δ = c.L / N
-    
-    s = EnthalpyPFR(;
+    N = 1000
+
+    model = EnthalpyPFR(;
         h = (T) -> c.cₚ * T,
         ρ = c.ρ,
         u = c.u,
-        r = c.R / 2δ,
+        r = c.R / (2c.L/N),
         ĥ = computehtc(c),
-    
+        L = c.L,
         Tₚ = c.Tₚ,
         Tₛ = c.Tₛ,
-    
-        N = 20000,
-        M = 100,
-        α = 0.6,
-        ε = 1.0e-08
+        N = N
     )
-    
-    z = cellcenters(c.L, δ)
-    
-    niter = 1
-    residuals = -1ones(s.M)
 
-    @time while niter < s.M+1
-        ε = residuals[niter] = iterate(s)
-    
-        if ε <= s.ε
-            println("Converged after $(niter) iterations")
-            break
-        end
-    
-        niter += 1
-    end
-
-    T = s.T_old
+    z, T, residual = model()
 
     fig, ax = reactorplot(; L = c.L)
     lines!(ax, data[:, 1], data[:, 2], color=:black, label = "CFD")
@@ -621,7 +632,7 @@ figh, residuals = let
     ax.yticks = range(300, 400, 6)
     ylims!(ax, (300, 400))
     axislegend(position = :rb)
-    fig, residuals
+    fig, residual
 end;
 
 # ╔═╡ 11aadef3-2ab9-45f9-8e8b-f33c8f7d39e3
@@ -640,9 +651,9 @@ let
     lines!(ax, log10.(r))
 
     ax.xticks = 0:5:n
-    ax.yticks = range(-8, 4, 13)
+    ax.yticks = range(-15, 5, 5)
     xlims!(ax, (0, n))
-    ylims!(ax, (-8, 4))
+    ylims!(ax, (-15, 5))
     fig
 end
 
@@ -655,19 +666,16 @@ md"""
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
 # ╟─53f1cba1-130f-4bb2-bf64-5e948b38b2c7
 # ╟─86d9caa3-5b77-4f4a-888f-48d8423269ae
-# ╠═e08d8341-f3a5-4ff1-b18e-19e9a0757b24
-# ╠═74233232-e490-4d6e-b424-5228f0e680f6
+# ╟─e08d8341-f3a5-4ff1-b18e-19e9a0757b24
+# ╟─74233232-e490-4d6e-b424-5228f0e680f6
 # ╟─7c43c2e5-98da-4e35-8f06-1a301f02cfec
 # ╟─4ff853d4-6747-46ac-b569-55febe550a27
 # ╟─8cf8d53e-aa26-4376-8973-be73791b90f4
 # ╟─7f826838-e7a7-4853-ac2e-d7ae6ca33da1
-# ╠═eecddd3e-81b6-452b-876d-fd8e76f96684
-# ╠═fb8a77ab-5072-44a7-a94f-5dbb5d0b34ce
-# ╠═b4ce7c35-b705-43e6-aee0-8bb4bea3aa7e
-# ╠═aef93e07-e205-441c-b930-0ed6a193dabe
-# ╠═e8b9773c-be88-4d68-8874-060945ed08bf
+# ╟─eecddd3e-81b6-452b-876d-fd8e76f96684
+# ╟─e8b9773c-be88-4d68-8874-060945ed08bf
 # ╟─11aadef3-2ab9-45f9-8e8b-f33c8f7d39e3
-# ╟─6e981934-8a73-4302-b810-f2ffb058eaf1
+# ╠═6e981934-8a73-4302-b810-f2ffb058eaf1
 # ╟─542763c5-b1d7-4e3f-b972-990f1d14fe39
 # ╟─1cf0a5eb-6f80-4105-8f21-a731583a7665
 # ╟─30f97d5b-e1de-4593-b451-1bd42156a4fc
