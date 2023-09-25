@@ -111,6 +111,34 @@ O reator em questão conserva a massa transportada, o que é matematicamente exp
 \hat{h}P(T_{w}-T)
 ```
 
+### Solução analítica
+
+```math
+\int_{T_{0}}^{T}\frac{dT}{T_{w}-T}=
+\frac{\hat{h}P}{\rho{}u{}c_{p}A_{c}}\int_{0}^{z}dz=
+\mathcal{C}_{0}z
+```
+
+```math
+u=T_{w}-T \implies -\int\frac{du}{u}=\log(u)\biggr\vert_{u_0}^{u}+\mathcal{C}_{1}
+```
+
+```math
+T=T_{w}-(T_{w}-T_{0})\exp(-\mathcal{C}_{0}z+\mathcal{C}_{1})
+```
+
+É trivial verificar com ``T(z=0)=T_{0}`` que ``\mathcal{C}_{1}=0``.
+
+```math
+T=T_{w}-(T_{w}-T_{0})\exp\left(-\frac{\hat{h}P}{\rho{}u{}c_{p}A_{c}}z\right)
+```
+"""
+
+# ╔═╡ d7ab351b-6f76-4c7c-b969-5099dd38df71
+
+
+# ╔═╡ a28774b0-0e2c-4a49-87f0-daf7ceb72766
+md"""
 ### Formulação numérica
 
 ```math
@@ -193,12 +221,14 @@ T_{N}    \\
 ```
 """
 
-# ╔═╡ 86d9caa3-5b77-4f4a-888f-48d8423269ae
-md"""
-### Solução analítica
+# ╔═╡ af4440bb-7ca3-4229-9145-9f4c8d2d6af2
+"Solução analítica do reator pistão circular no espaço das temperaturas."
+function analyticalthermalpfr(z, T₀, Tₛ, ĥ, ρ, u, cₚ, R)
+    return @. Tₛ-(Tₛ-T₀)*exp(-z*(2ĥ)/(ρ*u*cₚ*R))
+end
 
-
-"""
+# ╔═╡ 97d8352b-c0d5-4199-95f3-4c17cc737dec
+# TODO formulação com ModelingToolkit
 
 # ╔═╡ 7c43c2e5-98da-4e35-8f06-1a301f02cfec
 md"""
@@ -368,7 +398,7 @@ function cellcenters(L, δ)
 end
 
 # ╔═╡ e08d8341-f3a5-4ff1-b18e-19e9a0757b24
-"Integra reator pistão no espaço das temperaturas."
+"Integra reator pistão circular no espaço das temperaturas."
 function solvethermalpfr(c, N, ĥ)
     δ = c.L / N
     r = c.R / 2δ
@@ -584,11 +614,15 @@ let
     c = Conditions()
     ĥ = computehtc(c)
 
+    zₐ = cellcenters(c.L, c.L / 10000)
+    Tₐ = analyticalthermalpfr(zₐ, c.Tₚ, c.Tₛ, ĥ, c.ρ, c.u, c.cₚ, c.R)
+
     fig, ax = reactorplot(; L = c.L)
+    lines!(ax, zₐ, Tₐ, color=:red, label = "Analítica")
     lines!(ax, data[:, 1], data[:, 2], color=:black, label = "CFD")
     Tend = -1
 
-    for N in [10, 100, 500]
+    for N in [50, 100]
         z, T = solvethermalpfr(c, N, ĥ)
         stairs!(ax, z, T; label = "N = $(N)", step = :center)
         Tend = @sprintf("%.1f", T[end])
@@ -611,6 +645,7 @@ figh, residuals = let
 
     N = 1000
 
+    # TODO mudar interface e fornecer raio e deixar δ como interno!
     model = EnthalpyPFR(;
         h = (T) -> c.cₚ * T,
         ρ = c.ρ,
@@ -665,15 +700,18 @@ md"""
 # ╔═╡ Cell order:
 # ╟─e275b8ce-52b8-11ee-066f-3d20f8f1593e
 # ╟─53f1cba1-130f-4bb2-bf64-5e948b38b2c7
-# ╟─86d9caa3-5b77-4f4a-888f-48d8423269ae
+# ╠═d7ab351b-6f76-4c7c-b969-5099dd38df71
+# ╟─a28774b0-0e2c-4a49-87f0-daf7ceb72766
+# ╟─af4440bb-7ca3-4229-9145-9f4c8d2d6af2
 # ╟─e08d8341-f3a5-4ff1-b18e-19e9a0757b24
-# ╟─74233232-e490-4d6e-b424-5228f0e680f6
+# ╠═74233232-e490-4d6e-b424-5228f0e680f6
+# ╠═97d8352b-c0d5-4199-95f3-4c17cc737dec
 # ╟─7c43c2e5-98da-4e35-8f06-1a301f02cfec
 # ╟─4ff853d4-6747-46ac-b569-55febe550a27
 # ╟─8cf8d53e-aa26-4376-8973-be73791b90f4
 # ╟─7f826838-e7a7-4853-ac2e-d7ae6ca33da1
 # ╟─eecddd3e-81b6-452b-876d-fd8e76f96684
-# ╟─e8b9773c-be88-4d68-8874-060945ed08bf
+# ╠═e8b9773c-be88-4d68-8874-060945ed08bf
 # ╟─11aadef3-2ab9-45f9-8e8b-f33c8f7d39e3
 # ╠═6e981934-8a73-4302-b810-f2ffb058eaf1
 # ╟─542763c5-b1d7-4e3f-b972-990f1d14fe39
