@@ -148,7 +148,7 @@ Vamos agora empregar esse modelo para o cálculo da distribuição axial de temp
 
 # ╔═╡ 2ff345b1-aa07-439b-92c4-a25c228550f5
 md"""
-### Solução analítica
+### Solução analítica da EDO
 
 O problema tratado aqui permite uma solução analítica simples que desenvolvemos de maneira um pouco abrupta no que se segue. Separando os termos em ``T`` (variável dependente) e ``z`` (variável independente) e integrando sobre os limites adequados obtemos
 
@@ -194,7 +194,7 @@ O bloco abaixo resolve o problema para um conjunto de condições que você pode
 
 # ╔═╡ 509cffd8-76e8-489a-aa9c-4b32a08a2c04
 md"""
-### Integração numérica
+### Integração numérica da EDO
 
 Neste exemplo tivemos *sorte* de dispor de uma solução analítica. Esse problema pode facilmente tornar-se intratável se considerarmos uma dependência arbitrária do calor específico com a temperatura ou se a parede do reator tem uma dependência na coordenada axial. É importante dispor de meios numéricos para o tratamento deste tipo de problema.
 
@@ -307,60 +307,81 @@ md"""
 Com isso podemos proceder à integração com ajuda de `solveodepfr` concebida acima e aproveitamos para traçar o resultado em conjunto com a solução analítica.
 """
 
-# ╔═╡ a28774b0-0e2c-4a49-87f0-daf7ceb72766
+# ╔═╡ b902a85e-6c49-41f7-9355-26fa05b68105
 md"""
-### Formulação numérica
+### Método dos volumes finitos
+
+Quando integrando apenas um reator, o método de integração numérica da equação é geralmente a escolha mais simples. No entanto, em situações nas quais desejamos integrar trocas entre diferentes reatores aquela abordagem pode se tornar proibitiva. Uma dificuldade que aparece é a necessidade de solução iterativa até convergência dados os fluxos pelas paredes do reator, o que demandaria um código extremamente complexo para se gerir em integração direta. Outro caso são trocadores de calor que podem ser representados por conjutos de reatores em contra-corrente, um exemplo que vamos tratar mais tarde nesta série. Nestes casos podemos ganhar em simplicidade e tempo de cálculo empregando métodos que *linearizam* o problema para então resolvê-lo por uma simples *álgebra linear*.
+
+Na temática de fênomenos de transporte, o método provavelmente mais frequentemente utilizado é o dos volumes finitos (em inglês abreviado FVM). Note que em uma dimensão com coeficientes constantes pode-se mostrar que o método é equivalente à diferenças finitas (FDM), o que é nosso caso neste problema. No entanto vamos insistir na tipologia empregada com FVM para manter a consistência textual nos casos em que o problema não pode ser reduzido à um simples FDM.
+
+No que se segue vamos usar uma malha igualmente espaçada de maneira que nossas coordenadas de solução estão em ``z\in\{0,\delta,2\delta,\dots,N\delta\}`` e as interfaces das células encontram-se nos pontos intermediários. Isso dito, a primeira e última célula do sistema são *meias células*, o que chamaremos de *condição limite imersa*, contrariamente à uma condição ao limite com uma célula fantasma na qual o primeiro ponto da solução estaria em ``z=\delta/2``. Trataremos esse caso em outra ocasião.
+"""
+
+# ╔═╡ 9eb2dbcb-cb78-479c-a2d4-2f45cdf37e19
+md"""
+O problema de transporte advectivo em um reator pistão é essencialmente *upwind*, o que indica que a solução em uma célula ``E`` *a leste* de uma célula ``P`` depende exclusivamente da solução em ``P``. Veremos o impacto disto na forma matricial trivial que obteremos na sequência. Para a sua construção, começamos pela integração do problema entre ``P`` e ``E``, da qual se segue a separação de variáveis
 
 ```math
-\int_{T_P}^{T_N}\rho{}u{}c_{p}A_{c}dT=
-\int_{0}^{\delta}\hat{h}{P}(T_{w}-T)dz
+\int_{T_P}^{T_E}\rho{}u{}c_{p}A_{c}dT=
+\int_{0}^{\delta}\hat{h}{P}(T_{s}-T^{\star})dz
 ```
+
+Observe que introduzimos a variável ``T^{\star}`` no lado direito da equação e não sob a integral em ``dT``. Essa escolha se fez porque ainda não precisamos definir qual a temperatura mais representativa deve-se usar para o cálculo do fluxo térmico. Logo vamos interpretá-la como uma constante que pode ser movida para fora da integral
 
 ```math
 \rho{}u{}c_{p}A_{c}\int_{T_P}^{T_E}dT=
-\hat{h}{P}(T_{w}-T^{\prime})\int_{0}^{\delta}dz
+\hat{h}{P}(T_{s}-T^{\star})\int_{0}^{\delta}dz
 ```
+
+Realizando-se a integração definida obtemos a forma paramétrica
 
 ```math
 \rho{}u{}c_{p}A_{c}(T_{E} - T_{P})=
-\hat{h}{P}\delta(T_{w}-T^{\star})
+\hat{h}{P}\delta(T_{s}-T^{\star})
 ```
+
+Para o tratamento com FVM agrupamos parâmetros para a construção matricial, o que conduz à
 
 ```math
 a(T_{E} - T_{P})=
-T_{w}-T^{\star}
+T_{s}-T^{\star}
 ```
+"""
 
-### Relação de interpolação
+# ╔═╡ 69a8f137-eea6-4088-b973-5b68fa706e19
+md"""
+O ponto principal de partida de FVM em relação à FDM é a introdução de relações de interpolação. Normalmente vamos tratar destas quando gerindo fluxos em equações diferenciais parciais. Para fins didáticos, vamos discutir o conceito para o parâmetro ``T^{\star}`` na presente EDO.
+
+A troca convectiva com a parede não seria corretamente representada se escolhessemos ``T_{P}`` como referência para o cálculo do fluxo (o que seria o caso em FDM). Pode-se demonstrar, o que não faremos aqui, que sobre o comprimento ``\delta`` separando as células ``P`` e ``E`` a quantidade que levaria à um fluxo integral de calor idêntico à integração de um perfil linear de temperatura entre as células é dado pela média de suas temperaturas, o que é bastante intuitivo. Obviamente aproximações de ordem superior são possíveíveis empregando-se mais de duas células mas isso ultrapassa o nível de complexidade que almejamos entrar no momento.
 
 ```math
 T^{\star}=\frac{T_{E}+T_{P}}{2}
 ```
 
-Aplicando-se esta expressão na forma numérica final, após manipulação chega-se à
+Aplicando-se esta expressão na forma numérica precedente, após manipulação chega-se à
 
 ```math
 (2a + 1)T_{E}=
 (2a - 1)T_{P} + 2T_{w}
 ```
 
-```math
-A^{+}T_{E}=A^{-}T_{P} + 1
-```
+Com algumas manipulações adicionais obtemos a forma que será usada na sequência
 
 ```math
-A^{\pm} = \frac{2a \pm 1}{2T_{w}}
+-A^{-}T_{P} + A^{+}T_{E}=1\quad\text{aonde}\quad{}A^{\pm} = \frac{2a \pm 1}{2T_{w}}
 ```
+"""
 
-### Condição inicial
-
-Sistema com condição imersa
+# ╔═╡ a28774b0-0e2c-4a49-87f0-daf7ceb72766
+md"""
+A expressão acima é válida entre todos os pares de células ``P\rightarrow{}E`` no sistema, exceto pela primeira. Como se trata de uma EDO, a primeira célula do sistema contém a condição inicial ``T_{0}`` e não é precedida por nenhuma outra célula e evidentemente não precisamos resolver uma equação adicional para esta. Considerando o par de vizinhos ``P\rightarrow{}E\equiv{}0\rightarrow{}1``, substituindo o valor da condição inicial obtemos a modificação da equação para a condição inicial imersa
 
 ```math
 A^{+}T_{1}=1 + A^{-}T_{0}
 ```
 
-### Forma matricial
+Como não se trata de um problema de condições de contorno, nada é necessário para a última célula do sistema. Podemos agora escrever a forma matricial do problema que se dá por
 
 ```math
 \begin{bmatrix} 
@@ -389,6 +410,16 @@ T_{N}    \\
 1               \\
 \end{bmatrix}
 ```
+"""
+
+# ╔═╡ a82921d7-fb98-4f33-bc1e-df592fbaa7aa
+md"""
+A dependência de ``E`` somente em ``P`` faz com que tenhamos uma matriz diagonal inferior, aonde os ``-A^{-}`` são os coeficientes de ``T_{P}`` na formulação algébrica anterior. A condição inicial modifica o primeiro elemento do vetor constante à direita da igualdade. A construção e solução deste problema é provida em `solvethermalpfr` abaixo.
+"""
+
+# ╔═╡ 6f2ead8f-9626-4418-8453-f8964016b5d3
+md"""
+Abaixo adicionamos a solução do problema sobre malhas grosseiras sobre as soluções desenvolvidas anteriormente. A ideia de se representar sobre malhas grosseiras é simplesmente ilustrar o caráter discreto da solução, que é representada como constante no interior de uma célula. Adicionalmente representamos no gráfico um resultado interpolado de uma simulação CFD 3-D de um reator tubular em condições *supostamente identicas* as representadas aqui, o que mostra o bom acordo de simulações 1-D no limite de validade do modelo.
 """
 
 # ╔═╡ 7c43c2e5-98da-4e35-8f06-1a301f02cfec
@@ -943,8 +974,13 @@ md"""
 # ╟─8af47db5-1e57-4e53-b701-23d257edb3e0
 # ╟─f359e8b3-35da-4c38-9dc8-35a95c13bd8b
 # ╟─54b4ea1d-2fb3-4d8e-a41f-b887aebb4071
+# ╟─b902a85e-6c49-41f7-9355-26fa05b68105
+# ╟─9eb2dbcb-cb78-479c-a2d4-2f45cdf37e19
+# ╟─69a8f137-eea6-4088-b973-5b68fa706e19
 # ╟─a28774b0-0e2c-4a49-87f0-daf7ceb72766
+# ╟─a82921d7-fb98-4f33-bc1e-df592fbaa7aa
 # ╟─e08d8341-f3a5-4ff1-b18e-19e9a0757b24
+# ╟─6f2ead8f-9626-4418-8453-f8964016b5d3
 # ╟─8a502d49-a68a-494c-966c-fda03f51b6c0
 # ╟─7c43c2e5-98da-4e35-8f06-1a301f02cfec
 # ╟─4ff853d4-6747-46ac-b569-55febe550a27
