@@ -9,8 +9,6 @@ begin
     import Pkg
     Pkg.activate(Base.current_project())
     Pkg.instantiate()
-    Pkg.add("DifferentialEquations")
-    Pkg.add("ModelingToolkit")
 
     using CairoMakie
     using DelimitedFiles
@@ -24,7 +22,7 @@ begin
     using SparseArrays: SparseMatrixCSC
 
     import PlutoUI
-    toc = PlutoUI.TableOfContents(title="Tópicos")
+    toc = PlutoUI.TableOfContents(title = "Tópicos")
 
     macro warnonly(ex)
         quote
@@ -143,7 +141,7 @@ O segundo termo acima é nulo em razão da conservação da matéria, como discu
 \hat{h}P(T_{w}-T)
 ```
 
-Vamos agora empregar esse modelo para o cálculo da distribuição axial de temperatura ao longo do reator. No que se segue assume-se um reator tubular de seção circular de raio ``R`` e todos os parâmetros do modelo são constantes. 
+Vamos agora empregar esse modelo para o cálculo da distribuição axial de temperatura ao longo do reator. No que se segue assume-se um reator tubular de seção circular de raio ``R`` e todos os parâmetros do modelo são constantes.
 """
 
 # ╔═╡ 2ff345b1-aa07-439b-92c4-a25c228550f5
@@ -180,11 +178,17 @@ T=T_{w}-(T_{w}-T_{0})\exp\left(-\frac{\hat{h}P}{\rho{}u{}c_{p}A_{c}}z\right)
 # ╔═╡ af4440bb-7ca3-4229-9145-9f4c8d2d6af2
 "Solução analítica do reator pistão circular no espaço das temperaturas."
 function analyticalthermalpfr(;
-        P::Float64, A::Float64, Tₛ::Float64, Tₚ::Float64,
-        ĥ::Float64, u::Float64, ρ::Float64, cₚ::Float64,
-        z::Vector{Float64}
-    )
-    return @. Tₛ-(Tₛ-Tₚ)*exp(-z*(ĥ*P)/(ρ*u*cₚ*A))
+    P::Float64,
+    A::Float64,
+    Tₛ::Float64,
+    Tₚ::Float64,
+    ĥ::Float64,
+    u::Float64,
+    ρ::Float64,
+    cₚ::Float64,
+    z::Vector{Float64},
+)
+    return @. Tₛ - (Tₛ - Tₚ) * exp(-z * (ĥ * P) / (ρ * u * cₚ * A))
 end
 
 # ╔═╡ 2475c3e0-8819-4b4d-94e2-67a65f1e9c5f
@@ -216,7 +220,7 @@ struct DifferentialEquationPFR
 
     "Temperatura de superfície do reator [K]"
     Tₛ::Num
-    
+
     "Coeficient convectivo de troca de calor [W/(m².K)]"
     ĥ::Num
 
@@ -225,10 +229,10 @@ struct DifferentialEquationPFR
 
     "Densidade do fluido [kg/m³]"
     ρ::Num
-    
+
     "Calor específico do fluido [J/(kg.K)]"
     cₚ::Num
-    
+
     "Coordenada axial do reator [m]"
     z::Num
 
@@ -269,26 +273,32 @@ Para integração do modelo simbólico necessitamos substituir os parâmetros po
 # ╔═╡ a683ff7b-44ef-4872-bb4a-c39da1e1650d
 "Integra o modelo diferencial de reator pistão"
 function solveodepfr(;
-        model::DifferentialEquationPFR,
-        P::Float64, A::Float64, Tₛ::Float64, Tₚ::Float64,
-        ĥ::Float64, u::Float64, ρ::Float64, cₚ::Float64,
-        z::Vector{Float64}
-    )
+    model::DifferentialEquationPFR,
+    P::Float64,
+    A::Float64,
+    Tₛ::Float64,
+    Tₚ::Float64,
+    ĥ::Float64,
+    u::Float64,
+    ρ::Float64,
+    cₚ::Float64,
+    z::Vector{Float64},
+)
     T = [model.T => Tₚ]
 
     p = [
-        model.P  => P,
-        model.A  => A,
+        model.P => P,
+        model.A => A,
         model.Tₛ => Tₛ,
-        model.ĥ  => ĥ,
-        model.u  => u,
-        model.ρ  => ρ,
-        model.cₚ  => cₚ,
+        model.ĥ => ĥ,
+        model.u => u,
+        model.ρ => ρ,
+        model.cₚ => cₚ,
     ]
 
     zspan = (0, z[end])
     prob = ODEProblem(model.sys, T, zspan, p)
-    return solve(prob; saveat=z)
+    return solve(prob; saveat = z)
 end
 
 # ╔═╡ 33a5cf9d-4f6c-4edf-898b-53a376fbafd6
@@ -384,7 +394,7 @@ A^{+}T_{1}=1 + A^{-}T_{0}
 Como não se trata de um problema de condições de contorno, nada é necessário para a última célula do sistema. Podemos agora escrever a forma matricial do problema que se dá por
 
 ```math
-\begin{bmatrix} 
+\begin{bmatrix}
  A^{+}  &  0     &  0     & \dots  &  0      &  0      \\
 -A^{-}  &  A^{+} &  0     & \dots  &  0      &  0      \\
  0      & -A^{-} &  A^{+} & \ddots &  0      &  0      \\
@@ -392,7 +402,7 @@ Como não se trata de um problema de condições de contorno, nada é necessári
  0      &  0     &  0     & -A^{-} &  A^{+}  &   0     \\
  0      &  0     &  0     &  0     & -A^{-}  &   A^{+} \\
 \end{bmatrix}
-\begin{bmatrix} 
+\begin{bmatrix}
 T_{1}    \\
 T_{2}    \\
 T_{3}    \\
@@ -401,7 +411,7 @@ T_{N-1}  \\
 T_{N}    \\
 \end{bmatrix}
 =
-\begin{bmatrix} 
+\begin{bmatrix}
 1 + A^{-}T_{0}  \\
 1               \\
 1               \\
@@ -422,71 +432,57 @@ md"""
 Abaixo adicionamos a solução do problema sobre malhas grosseiras sobre as soluções desenvolvidas anteriormente. A ideia de se representar sobre malhas grosseiras é simplesmente ilustrar o caráter discreto da solução, que é representada como constante no interior de uma célula. Adicionalmente representamos no gráfico um resultado interpolado de uma simulação CFD 3-D de um reator tubular em condições *supostamente identicas* as representadas aqui, o que mostra o bom acordo de simulações 1-D no limite de validade do modelo.
 """
 
-# ╔═╡ 7c43c2e5-98da-4e35-8f06-1a301f02cfec
+# ╔═╡ cb209597-d543-463c-9a48-ccab39c24de0
 md"""
 ## Formulação na entalpia
 
-### Modelo do reator
+Em diversos casos a forma expressa na temperatura não é conveniente. Esse geralmente é o caso quando se inclui transformações de fase no sistema. Nessas situações a solução não suporta integração direta e devemos recorrer a um método iterativo baseado na entalpia. Isso se dá pela adição de uma etapa suplementar da solução de equações não lineares para se encontrar a temperatura à qual a entalpia corresponde para se poder avaliar as trocas térmicas.
+
+Para se efetuar a integração partimos do modelo derivado anteriormente numa etapa antes da simplificação final para solução na temperatura e já agrupamos os parâmetros livres em ``a``
 
 ```math
-\rho{}u{}\frac{dh}{dz}=
-\hat{h}\frac{P}{A_{c}}(T_{w}-T)
+\frac{dh}{dz}=\frac{\hat{h}P}{\rho{}u{}A_{c}}(T_{s}-T^{\star})=a(T_{s}-T^{\star})
+```
+"""
+
+# ╔═╡ 29583243-1a7b-43e2-8903-e55eff1a720a
+md"""
+É interessante observar que toda a discussão precedente acerca de porque não integrar sobre ``T^{\star}`` perde seu sentido aqui: a temperatura é claramente um parâmetro.
+
+```math
+\int_{h_P}^{h_N}dh=a^{\prime}\int_{0}^{\delta}(T_{s}-T^{\star})dz
 ```
 
-### Formulação numérica
+Seguindo um procedimento de integração similar ao aplicado na formulação usando a temperatura chegamos a equação do fluxo fazendo ``a=a^{\prime}\delta``
 
 ```math
-\int_{h_P}^{h_N}\rho{}u{}A_{c}dh=
-\int_{0}^{\delta}\hat{h}{P}(T_{w}-T)dz
+h_{E}-h_{P}=aT_{s}-aT^{\star}
 ```
+"""
 
-Seguindo um procedimento de integração similar ao aplicado na formulação usando a temperatura chegamos a equação do fluxo
-
-```math
-h_{E} - h_{P}=
-bT_{w}-bT^{\star}
-```
-
-### Relação de interpolação
+# ╔═╡ e4a3c5a7-e2a3-4384-80b8-b08f30d6ce3c
+md"""
+Seguindo a mesma lógica discutida na formulação na temperatura, introduzimos a relação de interpolação ``T^{\star}=(1/2)(T_{E}+T_{P})`` e aplicando-se esta expressão na forma numérica final, após manipulação chega-se à
 
 ```math
-T^{\star}=\frac{T_{E}+T_{P}}{2}
-```
-
-Aplicando-se esta expressão na forma numérica final, após manipulação chega-se à
-
-```math
-2h_{E} - 2h_{P}=
-2bT_{w}-bT_{E}-bT_{P}
+-2h_{P}+2h_{E}=2aT_{s}-aT_{E}-aT_{P}
 ```
 
 Essa expressão permite a solução da entalpia e a atualização do campo de temperaturas se faz através da solução de uma equação não linear do tipo ``h(T_{P})-h_{P}=0`` por célula.
 """
 
-# ╔═╡ 4ff853d4-6747-46ac-b569-55febe550a27
+# ╔═╡ c72a38cc-6d27-4473-b22f-b8afc9e4d66b
 md"""
-### Condição inicial
-
-A condição inicial é conhecida na interface e coincide com a temperatura que é usada para o cálculo do fluxo de calor ``T^{\star}`` localmente
+Substituindo a temperatura inicial ``T_{0}`` e sua entalpia associada ``h_{0}`` na forma algébrica do problema encontramos a primeira linha da matriz que explicita as modificações para se implementar a condição inicial do problema
 
 ```math
-T^{\star}=\frac{T_{1}+T_{0}}{2}
+2h_{1}=2aT_{s}-aT_{1}-aT_{0}-2h_{0}
 ```
 
-Substituindo essa expressão na forma linear do problema para a célula na fronteira produz
+Completamos assim as derivações para se escrever a forma matricial
 
 ```math
-2h_{1} = 2bT_{w}-bT_{1}-bT_{0} - 2h_{0}
-```
-"""
-
-# ╔═╡ 8cf8d53e-aa26-4376-8973-be73791b90f4
-md"""
-
-### Forma matricial
-
-```math
-\begin{bmatrix} 
+\begin{bmatrix}
  2      &  0     &  0     & \dots  &  0      &  0      \\
 -2      &  2     &  0     & \dots  &  0      &  0      \\
  0      & -2     &  2     & \ddots &  0      &  0      \\
@@ -494,7 +490,7 @@ md"""
  0      &  0     &  0     & -2     &  2      &  0     \\
  0      &  0     &  0     &  0     & -2      &  2 \\
 \end{bmatrix}
-\begin{bmatrix} 
+\begin{bmatrix}
 h_{1}    \\
 h_{2}    \\
 h_{3}    \\
@@ -503,7 +499,7 @@ h_{N-1}  \\
 h_{N}    \\
 \end{bmatrix}
 =
-\begin{bmatrix} 
+\begin{bmatrix}
 f_{0,1} + 2h(T_{0}) \\
 f_{1,2}     \\
 f_{2,3}      \\
@@ -513,18 +509,26 @@ f_{N-1,N}    \\
 \end{bmatrix}
 ```
 
+No vetor do lado direito introduzimos uma função de ``f`` dada por
+
 ```math
-f_{i,j} = 2bT_{w} - b(T_{i}+T_{j})
+f_{i,j} = 2aT_{s} - a(T_{i}+T_{j})
 ```
 """
 
-# ╔═╡ 7f826838-e7a7-4853-ac2e-d7ae6ca33da1
+# ╔═╡ 8cf8d53e-aa26-4376-8973-be73791b90f4
 md"""
-### Solução analítica
+A solução neste caso foi implementada numa estrutura `EnthalpyPFR`. Como as temperaturas usadas no lado direito da equação não são conhecidas inicialmente, o problema tem um carater iterativo intrínsico. Initializamos o lado direito da equação para em seguida resolver o problema na entalpia, que deve ser invertida (equações não lineares) para se atualizar as temperaturas. Isso se repete até que a solução entre duas iterações consecutivas atinja um *critério de convergência*.
+"""
 
-aa [^1]
+# ╔═╡ c7839d69-6c0a-4a8d-bb9f-a0fd81ef151b
+md"""
+Usamos agora essa estrutura para uma última simulação do mesmo problema. Para que os resultados sejam comparáveis as soluções precedentes, fizemos ``h(T) = c_{p}T + h_{ref}``. O valor de ``h_{ref}`` é arbitrário e não deve afetar a solução por razões que deveriam ser evidentes neste ponto do estudo.
+"""
 
-[^1]: Neste caso a solução se aplica unicamente ao exemplo utilizado neste tópico. Isso se dá pela forma particular integrável da entalpia utilizada.
+# ╔═╡ 45ba9b33-a6b3-4866-b8d2-af7684568c4d
+md"""
+Verificamos acima que a solução levou um certo número de iterações para convergir. Para concluir vamos averiguar a qualidade da convergência ao longo das iterações.
 """
 
 # ╔═╡ 542763c5-b1d7-4e3f-b972-990f1d14fe39
@@ -595,16 +599,15 @@ function solvethermalpfr(c, N, ĥ)
     δ = c.L / N
     r = c.R / 2δ
     a = (c.ρ * c.u * c.cₚ * r) / ĥ
-    
+
     A⁺ = (2a + 1) / (2c.Tₛ)
     A⁻ = (2a - 1) / (2c.Tₛ)
 
     b = ones(N)
     b[1] = 1 + A⁻ * c.Tₚ
 
-    M = spdiagm(-1 => -A⁻ * ones(N - 1),
-                 0 => +A⁺ * ones(N + 0))
-    
+    M = spdiagm(-1 => -A⁻ * ones(N - 1), 0 => +A⁺ * ones(N + 0))
+
     z = cellcenters(c.L, δ)
     T = similar(z)
 
@@ -625,25 +628,27 @@ struct EnthalpyPFR
 
     "Temperatura do fluido das células do reator."
     T::Vector{Float64}
-    
+
     "Vetor para estocagem dos residuos nas iterações."
     residual::Vector{Float64}
 
+    "A chamada do objeto retorna a solução."
     function (model::EnthalpyPFR)()
         return model.z, model.T, model.residual
     end
-    
+
     """
     Construtor interno do modelo de reator.
-    
-        h::Function
-        ρ  : Densidade do fluido [kg/m³].
-        u  : Velocidade do fluido [m/s].
-        r  : Relação de áreas [-].
-        ĥ  : Coeficiente de troca convectiva [W/(m².K)].
-        L  : Comprimento do reator [m].
-        Tₚ : Temperatura inicial do fluido [K].
+
+        h  : Função entalpia [J/kg].
+        P  : Perímetro da seção [m].
+        A  : Área da seção [m²].
         Tₛ : Temperatura da superfície do reator [K].
+        Tₚ : Temperatura inicial do fluido [K].
+        ĥ  : Coeficiente de troca convectiva [W/(m².K)].
+        u  : Velocidade do fluido [m/s].
+        ρ  : Densidade do fluido [kg/m³].
+        L  : Comprimento do reator [m].
         N  : Número de células no sistema, incluindo limites.
         M  : Máximo número de iterações para a solução.
         α  : Fator de relaxação da solução entre iterações.
@@ -651,30 +656,34 @@ struct EnthalpyPFR
     """
     function EnthalpyPFR(;
         h::Function,
-        ρ::Float64,
-        u::Float64,
-        r::Float64,
-        ĥ::Float64,
-        L::Float64,
-        Tₚ::Float64,
+        P::Float64,
+        A::Float64,
         Tₛ::Float64,
+        Tₚ::Float64,
+        ĥ::Float64,
+        u::Float64,
+        ρ::Float64,
+        L::Float64,
         N::Int64,
         M::Int64 = 100,
         α::Float64 = 0.4,
-        ε::Float64 = 1.0e-10
+        ε::Float64 = 1.0e-10,
     )
+        # Comprimento de uma célula.
+        δ = L / N
+
         # Alocação das coordenadas do sistema.
-        z = cellcenters(L, L/N)
+        z = cellcenters(L, δ)
 
         # Alocação da solução com a condição inicial.
-        T = Tₚ * ones(N+1)
+        T = Tₚ * ones(N + 1)
 
         # Alocação a matrix de diferenças.
-        A = 2spdiagm(-1 => -ones(N-1), 0 =>  ones(N))
+        K = 2spdiagm(-1 => -ones(N - 1), 0 => ones(N))
 
         # Constante do modelo.
-        a = ĥ / (ρ * u * r)
-        
+        a = (ĥ * P * δ) / (ρ * u * A)
+
         # Alocação do vetor do lado direito da equação.
         b = (2a * Tₛ) * ones(N)
         b[1] += 2h(Tₚ)
@@ -683,23 +692,23 @@ struct EnthalpyPFR
         # é interessante para o gráfico aonde podemos eliminar
         # os elementos negativos que não tem sentido físico.
         residual = -ones(M)
-        
+
         # Resolve o problema iterativamente.
         niter = 0
-        
-        @time while (niter < M)	
+
+        @time while (niter < M)
             niter += 1
 
             # Calcula o vetor `b` do lado direito e resolve o sistema. O bloco
             # comentado abaixo implementa uma versão com `RollingFunctions` que
             # acaba sendo muito mais lenta dada uma alocação maior de memória.
-            # h̄ = A \ (b - a * rolling(sum, T, 2))
-            h̄ = A \ (b - a * (T[1:end-1] + T[2:end]))
-        
+            # h̄ = K \ (b - a * rolling(sum, T, 2))
+            h̄ = K \ (b - a * (T[1:end-1] + T[2:end]))
+
             # Encontra as novas temperaturas resolvendo uma equação não-linear
             # para cada nova entalpia calculada resolvendo `A*h=b`.
-            U = map((Tₖ, hₖ)->find_zero(T->h(T)-hₖ, Tₖ), T[2:end], h̄)
-            
+            U = map((Tₖ, hₖ) -> find_zero(T -> h(T) - hₖ, Tₖ), T[2:end], h̄)
+
             # Relaxa a solução para evitar atualizações bruscas. Como o cálculo
             # se faz por `(1-α)*U + α*T`, podemos reescrever a expressão como
             # `U+α*(T-U) = anew+α*Δ`, aonde o incremento Δ pode ser reutilizado
@@ -723,10 +732,12 @@ end
 "Traça temperatura ao longo do reator"
 function reactorplot(; L)
     fig = Figure(resolution = (720, 500))
-    ax = Axis(fig[1, 1],
-              xticks = range(0.0, L, 6),
-              ylabel = "Temperatura [K]",
-              xlabel = "Posição [m]")
+    ax = Axis(
+        fig[1, 1],
+        xticks = range(0.0, L, 6),
+        ylabel = "Temperatura [K]",
+        xlabel = "Posição [m]",
+    )
     xlims!(ax, (0, L))
     return fig, ax
 end
@@ -754,7 +765,7 @@ function gnielinski_Nu(Re, Pr)
     g = f / 8
 
     num = g * (Re - 1000) * Pr
-    den = 1.0 + 12.7 * (Pr^(2/3)-1) * g^(1/2)
+    den = 1.0 + 12.7 * (Pr^(2 / 3) - 1) * g^(1 / 2)
     return num / den
 end
 
@@ -764,26 +775,26 @@ function dittusboelter_Nu(Re, Pr, L, D; what = :heating)
     function validate(Re, Pr, L, D)
         @assert 10000.0 <= Re
         @assert 0.6 <= Pr <= 160.0
-        @assert 10.0 <= L/D
+        @assert 10.0 <= L / D
     end
 
     @warnonly validate(Re, Pr, L, D)
-    
+
     n = (what == :heating) ? 0.4 : 0.4
-    return 0.023 * Re^(4/5) * Pr^n
+    return 0.023 * Re^(4 / 5) * Pr^n
 end
 
 # ╔═╡ f9687d19-1fc9-40b1-97b1-365b80061a1b
-"Estima coeficient de troca convectiva do escoamento"
+"Estima coeficiente de troca convectiva do escoamento"
 function computehtc(c; method = :g)
     D = 2c.R
-    
+
     Pr = c.Pr
     Re = c.ρ * c.u * D / c.μ
 
     Nug = gnielinski_Nu(Re, Pr)
     Nud = dittusboelter_Nu(Re, Pr, c.L, D)
-    
+
     if Re > 3000
         Nu = (method == :g) ? Nug : Nub
     else
@@ -800,8 +811,7 @@ function computehtc(c; method = :g)
         Nusselt (usado aqui) ....... $(Nu)
         k .......................... $(k) W/(m.K)
         h .......................... $(h) W/(m².K)\
-        """
-    )
+        """)
 
     return h
 end
@@ -810,21 +820,19 @@ end
 let
     c = Conditions()
     N = 10000
-    
+
     z = cellcenters(c.L, c.L / N)
     ĥ = computehtc(c)
 
-    P  = 2π * c.R
-    A  = π * c.R^2
+    P = 2π * c.R
+    A = π * c.R^2
 
-    pars = (P = P, A = A, Tₛ = c.Tₛ, Tₚ = c.Tₚ,
-            ĥ = ĥ, u = c.u, ρ = c.ρ, cₚ = c.cₚ,
-            z = z)
-    
+    pars = (P = P, A = A, Tₛ = c.Tₛ, Tₚ = c.Tₚ, ĥ = ĥ, u = c.u, ρ = c.ρ, cₚ = c.cₚ, z = z)
+
     Tₐ = analyticalthermalpfr(; pars...)
-    
+
     fig, ax = reactorplot(; L = c.L)
-    lines!(ax, z, Tₐ, color = :red,   linewidth = 2, label = "Analítica")
+    lines!(ax, z, Tₐ, color = :red, linewidth = 2, label = "Analítica")
     reactoraxes(@sprintf("%.2f", Tₐ[end]), ax)
     fig
 end
@@ -833,24 +841,22 @@ end
 let
     c = Conditions()
     N = 10000
-    
+
     z = cellcenters(c.L, c.L / N)
     ĥ = computehtc(c)
 
-    P  = 2π * c.R
-    A  = π * c.R^2
+    P = 2π * c.R
+    A = π * c.R^2
 
-    pars = (P = P, A = A, Tₛ = c.Tₛ, Tₚ = c.Tₚ,
-            ĥ = ĥ, u = c.u, ρ = c.ρ, cₚ = c.cₚ,
-            z  = z)
-    
+    pars = (P = P, A = A, Tₛ = c.Tₛ, Tₚ = c.Tₚ, ĥ = ĥ, u = c.u, ρ = c.ρ, cₚ = c.cₚ, z = z)
+
     model = DifferentialEquationPFR()
     Tₒ = solveodepfr(; model = model, pars...)[:T]
     Tₐ = analyticalthermalpfr(; pars...)
-    
+
     fig, ax = reactorplot(; L = c.L)
     lines!(ax, z, Tₒ, color = :black, linewidth = 5, label = "EDO")
-    lines!(ax, z, Tₐ, color = :red,   linewidth = 2, label = "Analítica")
+    lines!(ax, z, Tₐ, color = :red, linewidth = 2, label = "Analítica")
     reactoraxes(@sprintf("%.2f", Tₒ[end]), ax)
     fig
 end
@@ -860,86 +866,74 @@ let
     case = "fluent-reference"
     data = readdlm("c01-reator-pistao/$(case)/postprocess.dat", Float64)
     x, Tₑ = data[:, 1], data[:, 2]
-    
+
     c = Conditions()
     N = 10000
-    
+
     z = cellcenters(c.L, c.L / N)
     ĥ = computehtc(c)
 
-    P  = 2π * c.R
-    A  = π * c.R^2
+    P = 2π * c.R
+    A = π * c.R^2
 
-    pars = (P = P, A = A, Tₛ = c.Tₛ, Tₚ = c.Tₚ,
-            ĥ = ĥ, u = c.u, ρ = c.ρ, cₚ = c.cₚ,
-            z  = z)
-    
+    pars = (P = P, A = A, Tₛ = c.Tₛ, Tₚ = c.Tₚ, ĥ = ĥ, u = c.u, ρ = c.ρ, cₚ = c.cₚ, z = z)
+
     model = DifferentialEquationPFR()
     Tₒ = solveodepfr(; model = model, pars...)[:T]
     Tₐ = analyticalthermalpfr(; pars...)
-    
+
     fig, ax = reactorplot(; L = c.L)
     lines!(ax, z, Tₒ, color = :black, linewidth = 5, label = "EDO")
-    lines!(ax, z, Tₐ, color = :red,   linewidth = 2, label = "Analítica")
-    lines!(ax, x, Tₑ, color = :blue,  linewidth = 2, label = "CFD")
+    lines!(ax, z, Tₐ, color = :red, linewidth = 2, label = "Analítica")
+    lines!(ax, x, Tₑ, color = :blue, linewidth = 2, label = "CFD")
 
     for N in [20, 100]
         z, T = solvethermalpfr(c, N, ĥ)
         stairs!(ax, z, T; label = "N = $(N)", step = :center)
         Tend = @sprintf("%.1f", T[end])
     end
-    
+
     reactoraxes(@sprintf("%.2f", Tₒ[end]), ax)
     fig
 end
 
-# ╔═╡ e8b9773c-be88-4d68-8874-060945ed08bf
-figh, residuals = let
-    case = "fluent-reference"
-    # case = "constant-properties"
-    data = readdlm("c01-reator-pistao/$(case)/postprocess.dat", Float64)
-    
+# ╔═╡ d659887c-c3ff-4185-9443-e0098fa4f213
+residual, fig = let
     c = Conditions()
+    N = 10000
 
-    N = 1000
+    z = cellcenters(c.L, c.L / N)
+    ĥ = computehtc(c)
 
-    # TODO mudar interface e fornecer raio e deixar δ como interno!
-    model = EnthalpyPFR(;
-        h = (T) -> c.cₚ * T,
-        ρ = c.ρ,
-        u = c.u,
-        r = c.R / (2c.L/N),
-        ĥ = computehtc(c),
-        L = c.L,
-        Tₚ = c.Tₚ,
-        Tₛ = c.Tₛ,
-        N = N
-    )
-    
-    z, T, residual = model()
+    P = 2π * c.R
+    A = π * c.R^2
+
+    pars1 = (P = P, A = A, Tₛ = c.Tₛ, Tₚ = c.Tₚ, ĥ = ĥ, u = c.u, ρ = c.ρ)
+    pars2 = (cₚ = c.cₚ, z = z)
+
+    model = DifferentialEquationPFR()
+    Tₐ = analyticalthermalpfr(; pars1..., pars2...)
+
+    pfr = EnthalpyPFR(; h = (T) -> c.cₚ * T + 1000, pars1..., L = c.L, N = N)
+    x, Tₙ, residual = pfr()
 
     fig, ax = reactorplot(; L = c.L)
-    lines!(ax, data[:, 1], data[:, 2], color=:black, label = "CFD")
-    stairs!(ax, z, T; label = "N = $(N)", step = :center)
-    ax.title = "Temperatura final = $(@sprintf("%.1f", T[end])) K"
-    ax.yticks = range(300, 400, 6)
-    ylims!(ax, (300, 400))
-    axislegend(position = :rb)
-    fig, residual
+    lines!(ax, z, Tₐ, color = :red, linewidth = 4, label = "Analítica")
+    stairs!(ax, x, Tₙ, color = :black, linewidth = 1, label = "Numérica", step = :center)
+    reactoraxes(@sprintf("%.2f", Tₙ[end]), ax)
+    residual, fig
 end;
 
 # ╔═╡ 11aadef3-2ab9-45f9-8e8b-f33c8f7d39e3
-figh
+fig
 
 # ╔═╡ 6e981934-8a73-4302-b810-f2ffb058eaf1
 let
-    # Improve axes limits/ticks!
-    r  = residuals[residuals .> 0]
+    r = residual[residual.>0]
     n = length(r)
+
     fig = Figure(resolution = (720, 500))
-    ax = Axis(fig[1, 1],
-              ylabel = "log10(r)",
-              xlabel = "Iteração")
+    ax = Axis(fig[1, 1], ylabel = "log10(r)", xlabel = "Iteração")
     xlims!(ax, (1, n))
     lines!(ax, log10.(r))
 
@@ -982,14 +976,17 @@ md"""
 # ╟─e08d8341-f3a5-4ff1-b18e-19e9a0757b24
 # ╟─6f2ead8f-9626-4418-8453-f8964016b5d3
 # ╟─8a502d49-a68a-494c-966c-fda03f51b6c0
-# ╟─7c43c2e5-98da-4e35-8f06-1a301f02cfec
-# ╟─4ff853d4-6747-46ac-b569-55febe550a27
+# ╟─cb209597-d543-463c-9a48-ccab39c24de0
+# ╟─29583243-1a7b-43e2-8903-e55eff1a720a
+# ╟─e4a3c5a7-e2a3-4384-80b8-b08f30d6ce3c
+# ╟─c72a38cc-6d27-4473-b22f-b8afc9e4d66b
 # ╟─8cf8d53e-aa26-4376-8973-be73791b90f4
-# ╟─7f826838-e7a7-4853-ac2e-d7ae6ca33da1
 # ╟─eecddd3e-81b6-452b-876d-fd8e76f96684
-# ╠═e8b9773c-be88-4d68-8874-060945ed08bf
+# ╟─c7839d69-6c0a-4a8d-bb9f-a0fd81ef151b
 # ╟─11aadef3-2ab9-45f9-8e8b-f33c8f7d39e3
-# ╠═6e981934-8a73-4302-b810-f2ffb058eaf1
+# ╟─d659887c-c3ff-4185-9443-e0098fa4f213
+# ╟─45ba9b33-a6b3-4866-b8d2-af7684568c4d
+# ╟─6e981934-8a73-4302-b810-f2ffb058eaf1
 # ╟─542763c5-b1d7-4e3f-b972-990f1d14fe39
 # ╟─1cf0a5eb-6f80-4105-8f21-a731583a7665
 # ╟─30f97d5b-e1de-4593-b451-1bd42156a4fc
@@ -1001,4 +998,4 @@ md"""
 # ╟─cba4b197-9cbf-4c6d-9a5c-79dd212953dc
 # ╟─f9687d19-1fc9-40b1-97b1-365b80061a1b
 # ╟─f9b1527e-0d91-490b-95f6-13b649fe61db
-# ╠═92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
+# ╟─92b9fe51-6b4f-4ef0-aa83-f6e47c2db5a0
