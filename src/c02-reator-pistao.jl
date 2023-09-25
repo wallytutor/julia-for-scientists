@@ -26,6 +26,18 @@ md"""
 # Reator pistão - Parte 2
 """
 
+# ╔═╡ f3b7d46f-0fcc-4f68-9822-f83e977b87ee
+md"""
+## Reator conceitual incompressível
+"""
+
+# ╔═╡ 7912192d-1528-48ce-9adc-7e6a26b25c51
+md"""
+## Reator com fase sólida e gas
+
+**TODO**
+"""
+
 # ╔═╡ 975744de-7ab0-4bfa-abe5-3741ec7ec1cf
 md"""
 ## Anexos
@@ -37,7 +49,10 @@ md"""
 """
 
 # ╔═╡ c9194590-0fc7-4d68-9b19-9ee8d415fbda
-"Estrutura com memória do estado de um reator."
+"Estrutura com memória do estado de um reator.
+
+$(TYPEDFIELDS)
+"
 struct PFRData
     "Vetor das coordenadas das células do reator [m]."
     z::Vector{Float64}
@@ -56,6 +71,9 @@ struct PFRData
 
     "Matriz do problema."
     K::SparseMatrixCSC{Float64, Int64}
+
+    "Temperatura do fluido na última iteração [K]"
+    U::Vector{Float64}
 
     """	Construtor interno dos dados de reatores.
 
@@ -90,7 +108,7 @@ struct PFRData
 
         T[1] = T₀
 
-        return new(z, T, h, a, b, K)
+        return new(z, T, h, a, b, K, copy(T))
     end
 end
 
@@ -109,8 +127,8 @@ function solveenthalpypfr(;
     Tₛ::Vector{Float64},
     M::Int64 = 100,
     α::Float64 = 0.4,
-    ε::Float64 = 1.0e-06,
-)
+    ε::Float64 = 1.0e-08,
+)::Bool
     residual = -ones(M)
     niter = 0
 
@@ -120,7 +138,7 @@ function solveenthalpypfr(;
     while (niter < M)
         niter += 1
 
-        b[1:end] = 2r.a * Tₛ[2:end]
+        b[1:end] = 2r.a * Tₛ
         b[1] += 2r.h(T[1])
 
         h̄ = r.K \ (b - r.a * (T[1:end-1] + T[2:end]))
@@ -134,7 +152,11 @@ function solveenthalpypfr(;
         residual[niter] = maximum(abs.(Δ))
 
         if (residual[niter] <= ε)
-            return niter
+            Δ = maximum(abs.(T - r.U))
+
+            r.U[1:end] = T[1:end]
+
+            return (Δ <= ε)
         end
     end
 
@@ -153,6 +175,13 @@ function createpfrplot(; L)
     )
     xlims!(ax, (0, L))
     return fig, ax
+end
+
+# ╔═╡ 57c91e12-cc67-41ea-8554-8135123940bd
+"Interpola temperaturas de superfície nas interfaces."
+function getsurfacetemperature(r)
+    T = reverse(r.T)
+    return (T[1:end-1] + T[2:end]) / 2
 end
 
 # ╔═╡ 0e2360a8-0653-4faa-b909-1ab84ca9fbac
@@ -211,7 +240,7 @@ pistão tem por característica de que cada reator ocupa a metade de um cilindro
 raio `R` = $(R) m de forma que o perímetro de troca é igual o diâmetro e a área
 transversal a metade daquela do cilindro. A temperatura inicial do fluido no reator
 `r₁` é de $(T₁) K e no reator `r₂` é de $(T₂) K. Fluido do reator `r₂` tem um calor
-específico que é o dobro daquele de `r₁`.
+específico que é o triplo daquele de `r₁`.
 "
 function createprfpair(N)
     P = 2R
@@ -222,19 +251,27 @@ function createprfpair(N)
               ĥ = ĥ, u = u, ρ = ρ)
 
     r₁ = PFRData(; h = (T) -> 1cₚ * T, T₀ = T₁, shared...)
-    r₂ = PFRData(; h = (T) -> 2cₚ * T, T₀ = T₂, shared...)
+    r₂ = PFRData(; h = (T) -> 3cₚ * T, T₀ = T₂, shared...)
 
     return r₁, r₂
 end
 
 # ╔═╡ e5d12839-8167-4ddf-843f-f8ad0f682126
 let
-    N = 100
+    N = 500
     r₁, r₂ = createprfpair(N)
 
-    @time for _ in 1:20
-        solveenthalpypfr(; r = r₁, Tₛ = reverse(r₂.T))
-        solveenthalpypfr(; r = r₂, Tₛ = reverse(r₁.T))
+    @time for k in 1:20
+        Tₛ = getsurfacetemperature(r₂)
+        c₁ = solveenthalpypfr(; r = r₁, Tₛ = Tₛ)
+
+        Tₛ = getsurfacetemperature(r₁)
+        c₂ = solveenthalpypfr(; r = r₂, Tₛ = Tₛ)
+
+        if (c₁ && c₂)
+            println("Convergiu após $(k) iterações")
+            break
+        end
     end
 
     plotpfrpair(r₁, r₂)
@@ -247,7 +284,9 @@ md"""
 
 # ╔═╡ Cell order:
 # ╟─f33f5453-dd05-4a4e-ae12-695320fcd70d
-# ╠═e5d12839-8167-4ddf-843f-f8ad0f682126
+# ╟─f3b7d46f-0fcc-4f68-9822-f83e977b87ee
+# ╟─e5d12839-8167-4ddf-843f-f8ad0f682126
+# ╟─7912192d-1528-48ce-9adc-7e6a26b25c51
 # ╟─975744de-7ab0-4bfa-abe5-3741ec7ec1cf
 # ╟─be3a4933-516e-4867-a801-4df4f695432a
 # ╟─c9194590-0fc7-4d68-9b19-9ee8d415fbda
@@ -255,6 +294,7 @@ md"""
 # ╟─05457a3d-ec99-4e06-a969-a6e3804f62d4
 # ╟─a65e3986-9683-463b-b4d7-c78f80750328
 # ╟─d24c4ccc-70a3-4e37-a800-e57d54df3b48
+# ╟─57c91e12-cc67-41ea-8554-8135123940bd
 # ╟─0e2360a8-0653-4faa-b909-1ab84ca9fbac
 # ╟─d76d9e69-8830-4190-994f-49689d44b506
 # ╟─243ce122-61cf-4697-9f13-1710afef8e5c
