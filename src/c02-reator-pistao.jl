@@ -120,9 +120,37 @@ md"""
 ### Funções físicas
 """
 
-# ╔═╡ b03d62c2-db2e-4de7-8242-9a159e664e80
-function counterflowsolver()
+# ╔═╡ a842401e-77d0-4f2b-8ef1-06a7799531e2
+function innerloop(
+    r::PFRData,
+    Ts::Vector{Float64},
+    M::Int64,
+    α::Float64,
+    tol::Float64
+)::Bool
+    T = @view r.T[1:end]
+    b = @view r.b[1:end]
+    a, K, h = r.a, r.K, r.h
 
+    f = (Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ)
+
+    niter = 0
+    while (niter < M)
+        niter += 1
+
+        b[1:end] = a * (2Ts - T[1:end-1] - T[2:end])
+        b[1] += 2h(T[1])
+
+        U = map(f, T[2:end], K\b)
+        ΔT = (1-α) * (U - T[2:end])
+        ε = maximum(abs.(ΔT))
+        T[2:end] += ΔT
+
+        if (ε <= tol)
+            return true
+        end
+    end
+    return false
 end
 
 # ╔═╡ 5a492522-9db4-44bc-80d4-6aca529560de
@@ -200,6 +228,38 @@ function enthalpyresidual(ra, rb)
     Δha = ra.ṁ * enthalpychange(ra)
     Δhb = rb.ṁ * enthalpychange(rb)
     return abs(Δhb + Δha) / abs(Δhb)
+end
+
+# ╔═╡ b03d62c2-db2e-4de7-8242-9a159e664e80
+function counterflowsolver(
+    ra::PFRData,
+    rb::PFRData;
+    inner::Int64 = 5,
+    outer::Int64 = 500,
+    relax::Float64 = 0.95,
+    Δhmax::Float64 = 1.0e-08,
+    ΔTmax::Float64 = 1.0e-08,
+)
+    fa = (Tₖ, hₖ) -> find_zero(t -> ra.h(t) - hₖ, Tₖ)
+    fb = (Tₖ, hₖ) -> find_zero(t -> rb.h(t) - hₖ, Tₖ)
+    # maxsteps = outer * inner
+    # residualsa = -ones(maxsteps)
+    # residualsb = -ones(maxsteps)
+
+    @time for nouter in 1:outer
+        Ts = getsurfacetemperature(rb)
+        ca = innerloop(ra, Ts, inner, relax, ΔTmax)
+
+        Ts = getsurfacetemperature(ra)
+        cb = innerloop(rb, Ts, inner, relax, ΔTmax)
+
+        if enthalpyresidual(ra, rb) < Δhmax
+            @info("Laço externo convergiu após $(nouter) iterações")
+            break
+        end
+    end
+
+    @info("Conservação da entalpia = $(enthalpyresidual(ra, rb))")
 end
 
 # ╔═╡ 1e48a850-f92c-4a7e-aef8-8e52e45eba30
@@ -472,6 +532,21 @@ let
     plotpfrpair(r₁, r₂; ylim = (200, 2200), loc = :rb)
 end
 
+# ╔═╡ b46e7129-72e7-470b-b7e8-4a30f5bed259
+let
+    r₁, r₂ = createprfgassolidpair(500)
+
+    counterflowsolver(r₁, r₂;
+        inner = 5,
+        outer = 500,
+        relax = 0.95,
+        Δhmax = 1.0e-08,
+        ΔTmax = 1.0e-08
+    )
+
+    plotpfrpair(r₁, r₂; ylim = (200, 2200), loc = :rb)
+end
+
 # ╔═╡ 54aa6060-a605-4a05-83f1-2b672f1d148f
 md"""
 ### Pacotes
@@ -482,7 +557,8 @@ md"""
 # ╟─f3b7d46f-0fcc-4f68-9822-f83e977b87ee
 # ╟─e5d12839-8167-4ddf-843f-f8ad0f682126
 # ╟─7912192d-1528-48ce-9adc-7e6a26b25c51
-# ╠═c69be00a-40d4-4c25-aa47-ffb38ccaecec
+# ╟─c69be00a-40d4-4c25-aa47-ffb38ccaecec
+# ╠═b46e7129-72e7-470b-b7e8-4a30f5bed259
 # ╟─975744de-7ab0-4bfa-abe5-3741ec7ec1cf
 # ╟─27233ad1-a588-48d6-9103-901a71936074
 # ╟─c9194590-0fc7-4d68-9b19-9ee8d415fbda
@@ -491,6 +567,7 @@ md"""
 # ╟─630ba246-b5fb-4f9d-a9d2-b2edb471ada0
 # ╟─be3a4933-516e-4867-a801-4df4f695432a
 # ╠═b03d62c2-db2e-4de7-8242-9a159e664e80
+# ╠═a842401e-77d0-4f2b-8ef1-06a7799531e2
 # ╟─5a492522-9db4-44bc-80d4-6aca529560de
 # ╟─57c91e12-cc67-41ea-8554-8135123940bd
 # ╟─916238a8-093d-4dec-b95a-edcbf8b766e3
