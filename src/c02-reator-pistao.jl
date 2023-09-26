@@ -72,9 +72,6 @@ struct PFRData
     "Matriz do problema."
     K::SparseMatrixCSC{Float64, Int64}
 
-    "Temperatura do fluido na última iteração [K]."
-    U::Vector{Float64}
-
     "Fluxo mássico através do reator [kg/s]."
     ṁ::Float64
 
@@ -109,7 +106,7 @@ struct PFRData
         a = (ĥ * P * δ) / ṁ
         b = ones(N)
         T[1] = T₀
-        return new(z, T, h, a, b, K, copy(T), ṁ)
+        return new(z, T, h, a, b, K, ṁ)
     end
 end
 
@@ -122,6 +119,11 @@ md"""
 md"""
 ### Funções físicas
 """
+
+# ╔═╡ b03d62c2-db2e-4de7-8242-9a159e664e80
+function counterflowsolver()
+
+end
 
 # ╔═╡ 5a492522-9db4-44bc-80d4-6aca529560de
 """
@@ -160,12 +162,14 @@ function solveenthalpypfr(;
         # Calcula nova temperatura (trial).
         U = map(f, T[2:end], r.K \ b)
 
+        # Incremento da solução.
+        Δ = (1-α) * (U - T[2:end])
+
         # Relaxa solução para evitar divergência.
-        T[2:end] = (1-α) * U + α * T[2:end]
+        T[2:end] += Δ
 
         # Verica progresso da solução.
-        residual = maximum(abs.(T - r.U))
-        r.U[2:end] = T[2:end]
+        residual = maximum(abs.(Δ))
 
         if (residual <= ε)
             # @debug("Laço interno convergiu após $(niter) iterações")
@@ -478,7 +482,7 @@ md"""
 # ╟─f3b7d46f-0fcc-4f68-9822-f83e977b87ee
 # ╟─e5d12839-8167-4ddf-843f-f8ad0f682126
 # ╟─7912192d-1528-48ce-9adc-7e6a26b25c51
-# ╟─c69be00a-40d4-4c25-aa47-ffb38ccaecec
+# ╠═c69be00a-40d4-4c25-aa47-ffb38ccaecec
 # ╟─975744de-7ab0-4bfa-abe5-3741ec7ec1cf
 # ╟─27233ad1-a588-48d6-9103-901a71936074
 # ╟─c9194590-0fc7-4d68-9b19-9ee8d415fbda
@@ -486,6 +490,7 @@ md"""
 # ╟─a65e3986-9683-463b-b4d7-c78f80750328
 # ╟─630ba246-b5fb-4f9d-a9d2-b2edb471ada0
 # ╟─be3a4933-516e-4867-a801-4df4f695432a
+# ╠═b03d62c2-db2e-4de7-8242-9a159e664e80
 # ╟─5a492522-9db4-44bc-80d4-6aca529560de
 # ╟─57c91e12-cc67-41ea-8554-8135123940bd
 # ╟─916238a8-093d-4dec-b95a-edcbf8b766e3

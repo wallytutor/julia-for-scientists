@@ -711,11 +711,17 @@ struct EnthalpyPFR
             U = map((Tₖ, hₖ) -> find_zero(T -> h(T) - hₖ, Tₖ), T[2:end], h̄)
 
             # Relaxa a solução para evitar atualizações bruscas. Como o cálculo
-            # se faz por `(1-α)*U + α*T`, podemos reescrever a expressão como
-            # `U+α*(T-U) = anew+α*Δ`, aonde o incremento Δ pode ser reutilizado
-            # para o cálculo do resíduo que avalia a máxima atualização.
-            Δ = T[2:end] - U
-            T[2:end] = U + α * Δ
+            # se faz por `T=(1-α)*U+α*T`, podemos simplificar as operações com:
+            # Tn = (1-α)*U + α*Tm ⟹ ΔT = Tn - Tm = (1-α)*(U-Tm), logo
+            # Tn = Tm + ΔT, e o resíduo fica ε = max(|ΔT|).
+
+            # Incremento da solução.
+            Δ = (1-α) * (U - T[2:end])
+
+            # Relaxa solução para evitar divergência.
+            T[2:end] += Δ
+
+            # Verica progresso da solução.
             residual[niter] = maximum(abs.(Δ))
 
             # Verifica status da convergência.
