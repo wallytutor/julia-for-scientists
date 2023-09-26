@@ -8,6 +8,7 @@ using InteractiveUtils
 begin
     import Pkg
     Pkg.activate(Base.current_project())
+    Pkg.resolve()
     Pkg.instantiate()
 
     using CairoMakie

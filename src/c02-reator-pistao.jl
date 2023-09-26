@@ -8,6 +8,7 @@ using InteractiveUtils
 begin
     import Pkg
     Pkg.activate(Base.current_project())
+    Pkg.resolve()
     Pkg.instantiate()
 
     using CairoMakie
@@ -136,43 +137,43 @@ function solveenthalpypfr(;
     r::PFRData,
     Tₛ::Vector{Float64},
     M::Int64 = 100,
-    α::Float64 = 0.4,
-    ε::Float64 = 1.0e-08,
+    α::Float64 = 0.95,
+    ε::Float64 = 1.0e-06,
 )::Bool
     residual = -1.0
     niter = 0
 
     T = @view r.T[1:end]
     b = @view r.b[1:end]
+    a = r.a
+    h = r.h
+
+    f = (Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ)
 
     while (niter < M)
         niter += 1
 
-        b[1:end] = 2r.a * Tₛ
-        b[1] += 2r.h(T[1])
+        # Atualiza condições limites do problema.
+        b[1:end] = a * (2Tₛ - T[1:end-1] - T[2:end])
+        b[1] += 2h(T[1])
 
-        h̄ = r.K \ (b - r.a * (T[1:end-1] + T[2:end]))
+        # Calcula nova temperatura (trial).
+        U = map(f, T[2:end], r.K \ b)
 
-        U = map((Tₖ, hₖ) -> find_zero(t -> r.h(t) - hₖ, Tₖ), T[2:end], h̄)
+        # Relaxa solução para evitar divergência.
+        T[2:end] = (1-α) * U + α * T[2:end]
 
-        Δ = T[2:end] - U
-
-        T[2:end] = U + α * Δ
-
-        residual = maximum(abs.(Δ))
+        # Verica progresso da solução.
+        residual = maximum(abs.(T - r.U))
+        r.U[2:end] = T[2:end]
 
         if (residual <= ε)
-            # @info("Laço interno convergiu após $(niter) iterações")
-
-            Δ = maximum(abs.(T - r.U))
-
-            r.U[1:end] = T[1:end]
-
-            return (Δ <= ε)
+            # @debug("Laço interno convergiu após $(niter) iterações")
+            return true
         end
     end
 
-    @warn("Laço interno: após $(niter) iterações → $(residual)")
+    # @debug("Laço interno: após $(niter) iterações → $(residual)")
     return false
 end
 
@@ -353,24 +354,35 @@ end
 
 # ╔═╡ e5d12839-8167-4ddf-843f-f8ad0f682126
 let
-    N = 500
+    inner = 5
+    ε = 1.0e-08
+    α = 0.9
+
+    outer = 500
+    δhmax = 1.0e-08
+
+    shared = (α = α, ε = ε, M = inner)
+
+    N = 2000
     r₁, r₂ = createprfpair(N)
 
-    @time for k in 1:20
-        Tₛ = getsurfacetemperature(r₂)
-        c₁ = solveenthalpypfr(; r = r₁, Tₛ = Tₛ)
+    @time for k in 1:outer
+        Tₛ₁ = getsurfacetemperature(r₂)
+        c₁ = solveenthalpypfr(; r = r₁, Tₛ = Tₛ₁, shared...)
 
-        Tₛ = getsurfacetemperature(r₁)
-        c₂ = solveenthalpypfr(; r = r₂, Tₛ = Tₛ)
+        Tₛ₂ = getsurfacetemperature(r₁)
+        c₂ = solveenthalpypfr(; r = r₂, Tₛ = Tₛ₂, shared...)
 
-        if (c₁ && c₂)
-            println("Convergiu após $(k) iterações")
+        δh = enthalpyresidual(r₁, r₂)
+
+        if c₁ && c₂ && δh < δhmax
+            @info("Laço externo convergiu após $(k) iterações")
             break
         end
     end
 
-    println("Resíduo = $(enthalpyresidual(r₁, r₂))")
-    plotpfrpair(r₁, r₂)
+    @info("Conservação da entalpia = $(enthalpyresidual(r₁, r₂))")
+    plotpfrpair(r₁, r₂; ylim = (300, 400), loc = :rb)
 end
 
 # ╔═╡ 595edaed-4a16-43f4-b3b2-4803f06f93e7
@@ -383,20 +395,24 @@ const cₚᵍ = Polynomial([
     1.0991100692950414e-11
 ], :T)
 
+# ╔═╡ b7f5a299-360e-455c-9886-bcd2b4791a25
+"Variação de entalpia do sólido [J/(kg.K)]"
+const hˢ = (T) -> 900.0T
+
 # ╔═╡ b30e0fb9-d505-41e5-8a7d-1e8f2cbc2bbc
 "Variação de entalpia do gás [J/(kg.K)]"
 const hᵍ = integrate(cₚᵍ)
 
 # ╔═╡ 630ba246-b5fb-4f9d-a9d2-b2edb471ada0
 "Cria um par padronizado de reatores para simulação exemplo."
-function createprfgassolidpair(N)
+function createprfgassolidpair(N; debug = true)
     P = 2R
     A = 0.5π * R^2
     ĥ = 10.0
 
     shared = (L = L, N = N, P = P, A = A, ĥ = ĥ)
 
-    ratio = 2/3
+    ratio = 1.5
 
     Tᵍ = 2000.0
     ρᵍ = (101325.0 * 0.02897530345830224) / (GAS_CONSTANT * Tᵍ)
@@ -407,37 +423,49 @@ function createprfgassolidpair(N)
     ṁˢ = ratio * ṁᵍ
     uˢ = ṁˢ / (ρˢ * A)
 
-    r₁ = PFRData(; h = (T) -> cₚˡ * T, T₀ = T₁, shared..., u = uˢ, ρ = ρˢ)
-    r₂ = PFRData(; h = (T) -> hᵍ(T),   T₀ = Tᵍ, shared..., u = uᵍ, ρ = ρᵍ)
+    r₁ = PFRData(; h = (T) -> hˢ(T), T₀ = T₁, shared..., u = uˢ, ρ = ρˢ)
+    r₂ = PFRData(; h = (T) -> hᵍ(T), T₀ = Tᵍ, shared..., u = uᵍ, ρ = ρᵍ)
+
+    if debug
+        r₁.T[1:end] = @. r₁.T[1] + (r₁.z / L) * (r₂.T[1] - r₁.T[1])
+        r₂.T[1:end] = reverse(r₁.T)
+    end
 
     return r₁, r₂
 end
 
 # ╔═╡ c69be00a-40d4-4c25-aa47-ffb38ccaecec
 let
-    N = 200
+    inner = 5
+    ε = 1.0e-08
+    α = 0.95
+
+    outer = 500
+    δhmax = 1.0e-08
+
+    shared = (α = α, ε = ε, M = inner)
+
+    N = 500
     r₁, r₂ = createprfgassolidpair(N)
 
-    @time for k in 1:100
-        α = (k < 10) ? 0.3 : 0.9
-        ε = 0.01
 
-        Tₛ = getsurfacetemperature(r₂)
-        c₁ = solveenthalpypfr(; r = r₁, Tₛ = Tₛ, α = α, ε = ε)
+    @time for k in 1:outer
+        Tₛ₁ = getsurfacetemperature(r₂)
+        c₁ = solveenthalpypfr(; r = r₁, Tₛ = Tₛ₁, shared...)
 
-        Tₛ = getsurfacetemperature(r₁)
-        c₂ = solveenthalpypfr(; r = r₂, Tₛ = Tₛ, α = α, ε = ε)
+        Tₛ₂ = getsurfacetemperature(r₁)
+        c₂ = solveenthalpypfr(; r = r₂, Tₛ = Tₛ₂, shared...)
 
         δh = enthalpyresidual(r₁, r₂)
 
-        if c₁ && c₂ && δh < 1.0e-03
+        if c₁ && c₂ && δh < δhmax
             @info("Laço externo convergiu após $(k) iterações")
             break
         end
     end
 
-    println("Conservação da entalpia = $(enthalpyresidual(r₁, r₂))")
-    plotpfrpair(r₁, r₂; ylim = (300, 2000), loc = :lt)
+    @info("Conservação da entalpia = $(enthalpyresidual(r₁, r₂))")
+    plotpfrpair(r₁, r₂; ylim = (200, 2200), loc = :rb)
 end
 
 # ╔═╡ 54aa6060-a605-4a05-83f1-2b672f1d148f
@@ -477,6 +505,7 @@ md"""
 # ╟─e125fd83-5fd1-4c5c-b466-22fd3375ff4a
 # ╟─901d3be7-9a5c-4638-98ca-b4bb0ce355ed
 # ╟─595edaed-4a16-43f4-b3b2-4803f06f93e7
+# ╟─b7f5a299-360e-455c-9886-bcd2b4791a25
 # ╟─b30e0fb9-d505-41e5-8a7d-1e8f2cbc2bbc
 # ╟─54aa6060-a605-4a05-83f1-2b672f1d148f
 # ╟─fe2c3680-5b91-11ee-282c-c74d3b01ef9b
