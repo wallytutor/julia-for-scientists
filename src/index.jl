@@ -11,7 +11,7 @@ begin
     Pkg.instantiate()
 
     using PlutoUI
-    TableOfContents(title = "Conteúdos")
+    toc = TableOfContents(title = "Conteúdos")
 end
 
 # ╔═╡ 1b482d99-8528-4290-8f2b-1a93773c1471
@@ -23,7 +23,7 @@ html"""
 # ╔═╡ 1a128fd6-a4e8-4ab9-a351-35bd930f876e
 html"""
 <h2>Conteúdos</h2>
-
+<p>Estes são os conteúdos de interesse geral, independente do ramo de estudo. Os tópicos iniciais introduzem a linguagem Julia e então entramos em assuntos que podem parecer especializados mas são tratados de uma ótica generalista.</p>
 <ol>
   <li style="height: 25px;">
     <a href="000-preambulo-e-pluto.html" target="_blank">
@@ -156,6 +156,7 @@ html"""
 # ╔═╡ bacb2362-eebb-43b7-a301-8c28c1e01e6a
 html"""
 <h3>Fenômenos de transporte</h3>
+<p>Os tópicos aqui abordados são uma reintrepretação em Julia com adição de alguns elementos dos famosos <a href="https://jose.theoj.org/papers/10.21105/jose.00021">The 12 steps to Navier-Stokes equations</a>, por Lorena A. Barba and Gilbert F. Forsyth. Por reinterpretação quero dizer que o objetivo é o mesmo: implementar a solução de casos simples da equação mestra da dinâmica de fluidos. No entanto, a abordagem é menos acessível para um nível introdutório e nos focalizamos não somente nos aspectos numéricos, mas em como implementá-los em Julia para construir módulos reutilizáveis.</p>
 <ol>
   <li style="height: 25px;">
     <a href="#" target="_blank" style="pointer-events: none">
@@ -173,6 +174,7 @@ html"""
 # ╔═╡ d4ac2a63-bc3e-421d-88ea-da106a617a30
 html"""
 <h3>Engenharia de reatores</h3>
+<p>Neste tópico abordamos modelos de reatores de uma ótica que pode ser simultâneamente útil em Engenharia Química e Engenharia Mecânica. Os modelos de reator estudados incluem em alguns casos aspectos voltados a engenharia dos aspectos térmicos e em outros elementos de cinética química. Isso inclui modelos 0-D de reatores perfeitamente agitados, modelos 1-D de reatores pistão, e outros tópicos mais avançados.</p>
 <ol>
   <li style="height: 25px;">
     <a href="c01-reator-pistao.html" target="_blank">
@@ -247,6 +249,8 @@ Etapas à seguir para começar os estudos:
 md"""
 ## Para aonde ir depois?
 
+### Para aprender mais
+
 [Julia Academy](https://juliaacademy.com/): nesta página encontram-se cursos abertos em várias temáticas comumente abordadas com a linguagem Julia. Você encontrará cursos parcialmente equivalentes aos materiais tratados aqui, mas também vários conteúdos que não são abordados nesta introdução, especialmente em tópicos ligados a Ciência de Dados.
 
 [Introduction to Computational Thinking](https://computationalthinking.mit.edu/Fall23/): esse é provavelmente o melhor curso generalista para aplicações científicas da linguagem. O curso é ministrado inclusive pelo [Pr. Dr. Alan Edelman](https://en.wikipedia.org/wiki/Alan_Edelman) um dos criadores de Julia. Os tópicos abordados vão de tratamento de imagens, séries temporais, a resolução de equações diferenciais parciais.
@@ -257,11 +261,21 @@ md"""
 
 [Julia Data Science](https://juliadatascience.io/): este livro complementa tópicos mais operacionais de análise de dados, especialemente técnicas básicas de Ciência de Dados, que omitimos neste curso. Um bom material complementar aos estudos.
 
+### Comunidade Julia
+
 [Julia Community Zulipchat](https://julialang.zulipchat.com/): precisando de ajuda ou buscando um projeto para contribuir? Este chat aberto da comunidade Julia é o ponto de encontro para discutir acerca dos diferenter projetos e avanços na linguagem.
 
 [Julia Packages](https://juliapackages.com/): o repositório mestre do índice de pacotes escritos na linguagem Julia ou provendo interfaces à outras ferramentas. A página contém um sistema de busca e um índice por temas.
 
 [JuliaHub](https://juliahub.com/): esta plataforma comercial provê tudo que é necessário para se passar da prototipagem à escala industrial de soluções concebidas em Julia. Atualmente é a norma em termos de escalabilidade para a linguagem.
+
+### Organizações recomendadas
+
+[SciML](https://sciml.ai/): pacotes para *Machine Learning* científico.
+
+[JuMP](https://jump.dev/): uma linguagem de optimização matemática em Julia.
+
+[JuliaData](https://github.com/JuliaData): pacotes para *Data Science* em geral.
 """
 
 # ╔═╡ Cell order:
