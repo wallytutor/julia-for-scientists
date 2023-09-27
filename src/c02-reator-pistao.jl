@@ -12,15 +12,11 @@ begin
     Pkg.instantiate()
 
     using CairoMakie
-    using DifferentialEquations: solve
-    using DocStringExtensions
-    using ModelingToolkit
     using Printf
     using Roots
     using SparseArrays: spdiagm
-    using SparseArrays: SparseMatrixCSC
     import PlutoUI
-    
+
     include("util-reator-pistao.jl")
     toc = PlutoUI.TableOfContents(title = "Tópicos")
 end
@@ -52,7 +48,7 @@ Para se efetuar a integração partimos do modelo derivado anteriormente numa et
 \int_{h_P}^{h_N}dh=a^{\prime}\int_{0}^{\delta}(T_{s}-T^{\star})dz
 ```
 
-Seguindo um procedimento de integração similar ao aplicado na formulação usando a temperatura chegamos a equação do fluxo fazendo ``a=a^{\prime}\delta``
+Seguindo um procedimento de integração similar ao aplicado na formulação usando a temperatura chegamos a equação do gradiente fazendo ``a=a^{\prime}\delta``
 
 ```math
 h_{E}-h_{P}=aT_{s}-aT^{\star}
@@ -113,182 +109,98 @@ f_{i,j} = 2aT_{s} - a(T_{i}+T_{j})
 md"""
 ## Solução em volumes finitos
 
-A solução neste caso foi implementada numa estrutura `EnthalpyPFR`. Como as temperaturas usadas no lado direito da equação não são conhecidas inicialmente, o problema tem um carater iterativo intrínsico. Initializamos o lado direito da equação para em seguida resolver o problema na entalpia, que deve ser invertida (equações não lineares) para se atualizar as temperaturas. Isso se repete até que a solução entre duas iterações consecutivas atinja um *critério de convergência*.
+Como as temperaturas usadas no lado direito da equação não são conhecidas inicialmente, o problema tem um carater iterativo intrínsico. Initializamos o lado direito da equação para em seguida resolver o problema na entalpia, que deve ser invertida (equações não lineares) para se atualizar as temperaturas. Isso se repete até que a solução entre duas iterações consecutivas atinja um *critério de convergência*.
+
+Como a estimativa inicial do campo de temperaturas pode ser extremamente ruim, usamos um método com relaxações consecutivas da solução no caminho da convergência. A ideia de base é evitar atualizações bruscas que podem gerar temperaturas negativas ou simplesmente divergir para o infinito. A cada passo, partindo das temperaturas ``T^{(m)}``, aonde ``m`` é o índice da iteração, resolvemos o sistema não-linear para encontrar ``T^{(m+1)^\prime}``. Pelas razões citadas, não é razoável utilizar essa solução diretamente, portanto realizamos a ponderação, dita relaxação, que se segue
+
+```math
+T^{(m+1)}=(1-\alpha)T^{(m+1)^\prime}+αT^{(m)}
+```
+
+Como critério de parada do cálculo, o que chamamos convergência, queremos que a máxima *atualização* ``\Delta{}T`` do campo de temperaturas seja menor que um critério ``\varepsilon``, ou seja
+
+```math
+\max\vert{}T^{(m+1)}-T^{(m)}{}\vert=\max\vert{}\Delta{}T{}\vert<\varepsilon
+```
+
+Para evitar cálculos separados da nova temperatura e então da variação, podemos usar as definições acima para chegar à
+
+```math
+\Delta{}T{} = (1-\alpha)(T^{(m+1)^\prime}-T^{(m)})
+```
+
+e então atualizar a solução com ``T^{(m+1)}+T^{(m)}+\Delta{}T{}``.
+
+A solução integrando esses passos foi implementada em `solventhalpypfr`.
 """
 
 # ╔═╡ 548a5654-47bf-42d4-bfb6-38e1c2860c32
-"Representa um reator pistão formulado na entalpia.
+"Integra reator pistão circular no espaço das entalpias."
+function solveenthalpypfr(;
+    mesh::AbstractDomainFVM,
+    P::T,
+    A::T,
+    Tₛ::T,
+    Tₚ::T,
+    ĥ::T,
+    u::T,
+    ρ::T,
+    h::Function,
+    M::Int64 = 100,
+    α::Float64 = 0.4,
+    ε::Float64 = 1.0e-10,
+    vars...,
+) where {T}
+    N = length(mesh.z) - 1
+    Tm = Tₚ * ones(N + 1)
 
-$(TYPEDFIELDS)
-"
-struct EnthalpyPFR
-    "Vetor das coordenadas das células do reator."
-    z::Vector{Float64}
+    a = (ĥ * P * mesh.δ) / (ρ * u * A)
+    K = 2spdiagm(-1 => -ones(N - 1), 0 => ones(N))
 
-    "Temperatura do fluido das células do reator."
-    T::Vector{Float64}
+    b = (2a * Tₛ) * ones(N)
+    b[1] += 2h(Tₚ)
 
-    "Vetor para estocagem dos residuos nas iterações."
-    residual::Vector{Float64}
+    # Aloca e inicia em negativo o vetor de residuos. Isso
+    # é interessante para o gráfico aonde podemos eliminar
+    # os elementos negativos que não tem sentido físico.
+    residual = -ones(M)
 
-    "A chamada do objeto retorna a solução."
-    function (model::EnthalpyPFR)()
-        return model.z, model.T, model.residual
-    end
+    @time for niter = 1:M
+        # Calcula o vetor `b` do lado direito e resolve o sistema.
+        h̄ = K \ (b - a * (Tm[1:end-1] + Tm[2:end]))
 
-    """
-    Construtor interno do modelo de reator.
+        # Encontra as novas temperaturas resolvendo uma equação não-linear
+        # para cada nova entalpia calculada resolvendo `A*h=b`.
+        U = map((Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ), Tm[2:end], h̄)
 
-        h  : Função entalpia [J/kg].
-        P  : Perímetro da seção [m].
-        A  : Área da seção [m²].
-        Tₛ : Temperatura da superfície do reator [K].
-        Tₚ : Temperatura inicial do fluido [K].
-        ĥ  : Coeficiente de troca convectiva [W/(m².K)].
-        u  : Velocidade do fluido [m/s].
-        ρ  : Densidade do fluido [kg/m³].
-        L  : Comprimento do reator [m].
-        N  : Número de células no sistema, incluindo limites.
-        M  : Máximo número de iterações para a solução.
-        α  : Fator de relaxação da solução entre iterações.
-        ε  : Tolerância absoluta da solução.
-    """
-    function EnthalpyPFR(;
-        h::Function,
-        P::Float64,
-        A::Float64,
-        Tₛ::Float64,
-        Tₚ::Float64,
-        ĥ::Float64,
-        u::Float64,
-        ρ::Float64,
-        L::Float64,
-        N::Int64,
-        M::Int64 = 100,
-        α::Float64 = 0.4,
-        ε::Float64 = 1.0e-10,
-    )
-        # Comprimento de uma célula.
-        δ = L / N
+        # Incremento da solução.
+        Δ = (1 - α) * (U - Tm[2:end])
 
-        # Alocação das coordenadas do sistema.
-        z = cellcenters(L, δ)
+        # Relaxa solução para evitar divergência.
+        Tm[2:end] += Δ
 
-        # Alocação da solução com a condição inicial.
-        T = Tₚ * ones(N + 1)
+        # Verica progresso da solução.
+        residual[niter] = maximum(abs.(Δ))
 
-        # Alocação a matrix de diferenças.
-        K = 2spdiagm(-1 => -ones(N - 1), 0 => ones(N))
-
-        # Constante do modelo.
-        a = (ĥ * P * δ) / (ρ * u * A)
-
-        # Alocação do vetor do lado direito da equação.
-        b = (2a * Tₛ) * ones(N)
-        b[1] += 2h(Tₚ)
-
-        # Aloca e inicia em negativo o vetor de residuos. Isso
-        # é interessante para o gráfico aonde podemos eliminar
-        # os elementos negativos que não tem sentido físico.
-        residual = -ones(M)
-
-        # Resolve o problema iterativamente.
-        niter = 0
-
-        @time while (niter < M)
-            niter += 1
-
-            # Calcula o vetor `b` do lado direito e resolve o sistema. O bloco
-            # comentado abaixo implementa uma versão com `RollingFunctions` que
-            # acaba sendo muito mais lenta dada uma alocação maior de memória.
-            # h̄ = K \ (b - a * rolling(sum, T, 2))
-            h̄ = K \ (b - a * (T[1:end-1] + T[2:end]))
-
-            # Encontra as novas temperaturas resolvendo uma equação não-linear
-            # para cada nova entalpia calculada resolvendo `A*h=b`.
-            U = map((Tₖ, hₖ) -> find_zero(T -> h(T) - hₖ, Tₖ), T[2:end], h̄)
-
-            # Relaxa a solução para evitar atualizações bruscas. Como o cálculo
-            # se faz por `T=(1-α)*U+α*T`, podemos simplificar as operações com:
-            # Tn = (1-α)*U + α*Tm ⟹ ΔT = Tn - Tm = (1-α)*(U-Tm), logo
-            # Tn = Tm + ΔT, e o resíduo fica ε = max(|ΔT|).
-
-            # Incremento da solução.
-            Δ = (1-α) * (U - T[2:end])
-
-            # Relaxa solução para evitar divergência.
-            T[2:end] += Δ
-
-            # Verica progresso da solução.
-            residual[niter] = maximum(abs.(Δ))
-
-            # Verifica status da convergência.
-            if (residual[niter] <= ε)
-                println("Converged after $(niter) iterations")
-                break
-            end
+        # Verifica status da convergência.
+        if (residual[niter] <= ε)
+            @info("Convergiu após $(niter) iterações")
+            break
         end
-
-        return new(z, T, residual)
     end
+
+    return Tm, residual
 end
 
 # ╔═╡ bd79aef3-2634-48b2-b06c-2f0185ebc3ac
 md"""
-Usamos agora essa estrutura para uma última simulação do mesmo problema. Para que os resultados sejam comparáveis as soluções precedentes, fizemos ``h(T) = c_{p}T + h_{ref}``. O valor de ``h_{ref}`` é arbitrário e não deve afetar a solução por razões que deveriam ser evidentes neste ponto do estudo.
+Usamos agora essa função para uma última simulação do mesmo problema. Para que os resultados sejam comparáveis as soluções precedentes, fizemos ``h(T) = c_{p}T + h_{ref}``. O valor de ``h_{ref}`` é arbitrário e não deve afetar a solução por razões que deveriam ser evidentes neste ponto do estudo.
 """
-
-# ╔═╡ 4fd5e5e0-8cd7-4d9b-88b8-ce2dbbbfef66
-# fig
-
-# ╔═╡ 07ce85f9-b2f2-4008-b8ae-0e417e22347c
-# residual, fig = let
-#     c = Conditions()
-#     N = 10000
-
-#     z = cellcenters(c.L, c.L / N)
-#     ĥ = computehtc(c)
-
-#     P = 2π * c.R
-#     A = π * c.R^2
-
-#     pars1 = (P = P, A = A, Tₛ = c.Tₛ, Tₚ = c.Tₚ, ĥ = ĥ, u = c.u, ρ = c.ρ)
-#     pars2 = (cₚ = c.cₚ, z = z)
-
-#     model = DifferentialEquationPFR()
-#     Tₐ = analyticalthermalpfr(; pars1..., pars2...)
-
-#     pfr = EnthalpyPFR(; h = (T) -> c.cₚ * T + 1000, pars1..., L = c.L, N = N)
-#     x, Tₙ, residual = pfr()
-
-#     fig, ax = reactorplot(; L = c.L)
-#     lines!(ax, z, Tₐ, color = :red, linewidth = 4, label = "Analítica")
-#     stairs!(ax, x, Tₙ, color = :black, linewidth = 1, label = "Numérica", step = :center)
-#     reactoraxes(@sprintf("%.2f", Tₙ[end]), ax)
-#     residual, fig
-# end;
 
 # ╔═╡ 2ff750d6-8680-44cd-a873-bc6f9ac9a383
 md"""
-Verificamos acima que a solução levou um certo número de iterações para convergir. Para concluir vamos averiguar a qualidade da convergência ao longo das iterações.
+Verificamos abaixo que a solução levou um certo número de iterações para convergir. Para concluir vamos averiguar a qualidade da convergência ao longo das iterações.
 """
-
-# ╔═╡ c4b7cfe3-37a8-4619-b8c9-3d506f74468b
-# let
-#     r = residual[residual.>0]
-#     n = length(r)
-
-#     fig = Figure(resolution = (720, 500))
-#     ax = Axis(fig[1, 1], ylabel = "log10(r)", xlabel = "Iteração")
-#     xlims!(ax, (1, n))
-#     lines!(ax, log10.(r))
-
-#     ax.xticks = 0:5:n
-#     ax.yticks = range(-15, 5, 5)
-#     xlims!(ax, (0, n))
-#     ylims!(ax, (-15, 5))
-#     fig
-# end
 
 # ╔═╡ 5c97795c-fc24-409b-ac15-7fafebf6153b
 md"""
@@ -302,8 +214,104 @@ md"""
 ## Anexos
 """
 
-# ╔═╡ 97f56fc2-bbb0-4cde-8d55-751160dea9a1
+# ╔═╡ 7b150e7e-564b-49cf-b4e2-f753a8526d80
+"Paramêtros do reator."
+const reactor = notedata.c01.reactor
 
+# ╔═╡ a821271c-e66c-422c-8156-848b708ce193
+"Parâmetros do fluido"
+const fluid = notedata.c01.fluid
+
+# ╔═╡ a6cd5113-eb4d-445a-a646-15458d2b8177
+"Parâmetros de operação."
+const operations = notedata.c01.operations
+
+# ╔═╡ 5ef2eb0d-1884-4cef-8f00-781f9f164941
+"Perímetro da seção circular do reator [m]."
+const P = π * reactor.D
+
+# ╔═╡ 096df29b-42ef-4b44-9a54-145f84a9e06b
+"Área da seção circula do reator [m²]."
+const A = π * (reactor.D / 2)^2
+
+# ╔═╡ 97f56fc2-bbb0-4cde-8d55-751160dea9a1
+"Solução analítica do reator pistão circular no espaço das temperaturas."
+function analyticalthermalpfr(;
+    P::T,
+    A::T,
+    Tₛ::T,
+    Tₚ::T,
+    ĥ::T,
+    u::T,
+    ρ::T,
+    cₚ::T,
+    z::Vector{T},
+)::Vector{T} where {T}
+    return @. Tₛ - (Tₛ - Tₚ) * exp(-z * (ĥ * P) / (ρ * u * cₚ * A))
+end
+
+# ╔═╡ 29f8a7e8-8570-43b6-a1e4-48f42f6b1e5a
+fig1, fig2 = let
+    mesh = ImmersedConditionsFVM(; L = reactor.L, N = 10000)
+
+    z = mesh.z
+    ĥ = computehtc(; reactor..., fluid..., u = operations.u)
+
+    h = (T) -> fluid.cₚ * T + 1000
+
+    pars = (z = z, ĥ = ĥ, P = P, A = A, ρ = fluid.ρ, cₚ = fluid.cₚ, operations...)
+
+    Tₐ = analyticalthermalpfr(; pars...)
+    Tₙ, residuals = solveenthalpypfr(; mesh = mesh, h = h, pars...)
+
+    fig1 = let
+        yrng = (300.0, 400.0)
+        Tend = @sprintf("%.2f", Tₐ[end])
+        fig = Figure(resolution = (720, 500))
+        ax = Axis(fig[1, 1])
+        lines!(ax, z, Tₐ, color = :red, linewidth = 4, label = "Analítica")
+        stairs!(
+            ax,
+            z,
+            Tₙ,
+            color = :black,
+            linewidth = 1,
+            label = "Numérica",
+            step = :center,
+        )
+        xlims!(ax, (0, reactor.L))
+        ax.title = "Temperatura final = $(Tend) K"
+        ax.xlabel = "Posição [m]"
+        ax.ylabel = "Temperatura [K]"
+        ax.xticks = range(0.0, reactor.L, 6)
+        ax.yticks = range(yrng..., 6)
+        ylims!(ax, yrng)
+        axislegend(position = :rb)
+        fig
+    end
+
+    fig2 = let
+        r = residuals[residuals.>0]
+        n = length(r)
+
+        fig = Figure(resolution = (720, 500))
+        ax = Axis(fig[1, 1], ylabel = "log10(r)", xlabel = "Iteração")
+        lines!(ax, log10.(r))
+        ax.xticks = 1:5:n
+        ax.yticks = range(-15, 5, 5)
+        xlims!(ax, (1, n))
+        ylims!(ax, (-15, 5))
+        fig
+    end
+
+    fig1, fig2
+end;
+
+# ╔═╡ 93cdcc24-60aa-4c6c-87aa-1f941c7a33f5
+fig1
+
+# ╔═╡ c4b7cfe3-37a8-4619-b8c9-3d506f74468b
+fig2
 
 # ╔═╡ 7158a6ea-48ec-4b19-81db-1317198cc980
 md"""
@@ -316,12 +324,17 @@ md"""
 # ╟─da2429b7-5dd5-44f4-a5ec-d60b69100fb6
 # ╟─548a5654-47bf-42d4-bfb6-38e1c2860c32
 # ╟─bd79aef3-2634-48b2-b06c-2f0185ebc3ac
-# ╠═4fd5e5e0-8cd7-4d9b-88b8-ce2dbbbfef66
-# ╠═07ce85f9-b2f2-4008-b8ae-0e417e22347c
+# ╟─29f8a7e8-8570-43b6-a1e4-48f42f6b1e5a
+# ╟─93cdcc24-60aa-4c6c-87aa-1f941c7a33f5
 # ╟─2ff750d6-8680-44cd-a873-bc6f9ac9a383
-# ╠═c4b7cfe3-37a8-4619-b8c9-3d506f74468b
+# ╟─c4b7cfe3-37a8-4619-b8c9-3d506f74468b
 # ╟─5c97795c-fc24-409b-ac15-7fafebf6153b
 # ╟─b272c7d6-1697-4805-bcb4-73ca02de4b1c
-# ╠═97f56fc2-bbb0-4cde-8d55-751160dea9a1
+# ╟─7b150e7e-564b-49cf-b4e2-f753a8526d80
+# ╟─a821271c-e66c-422c-8156-848b708ce193
+# ╟─a6cd5113-eb4d-445a-a646-15458d2b8177
+# ╟─5ef2eb0d-1884-4cef-8f00-781f9f164941
+# ╟─096df29b-42ef-4b44-9a54-145f84a9e06b
+# ╟─97f56fc2-bbb0-4cde-8d55-751160dea9a1
 # ╟─7158a6ea-48ec-4b19-81db-1317198cc980
-# ╠═ea183591-cc73-44cc-b1d0-572cf24d5b6b
+# ╟─ea183591-cc73-44cc-b1d0-572cf24d5b6b

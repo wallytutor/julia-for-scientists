@@ -180,8 +180,13 @@ html"""
     </a>
   </li>
   <li style="height: 25px;">
-    <a href="#" target="_blank" style="pointer-events: none">
+    <a href="c02-reator-pistao.html" target="_blank">
       Reator pistão - Parte 2
+    </a>
+  </li>
+  <li style="height: 25px;">
+    <a href="#" target="_blank" style="pointer-events: none">
+      Reator pistão - Parte 3
     </a>
   </li>
   <li style="height: 25px;">

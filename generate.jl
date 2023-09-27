@@ -44,6 +44,7 @@ notebooks_ready = [
     "004-estruturas-de-dados"
     "a01-colaboracao-cientifica"
     "c01-reator-pistao"
+    "c02-reator-pistao"
 ]
 
 workflow(notebooks_ready)

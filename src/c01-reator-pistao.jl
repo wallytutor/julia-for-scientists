@@ -10,7 +10,7 @@ begin
     Pkg.activate(Base.current_project())
     Pkg.resolve()
     Pkg.instantiate()
-    
+
     using CairoMakie
     using DelimitedFiles
     using DifferentialEquations: solve
@@ -20,7 +20,7 @@ begin
     using Roots
     using SparseArrays: spdiagm
     import PlutoUI
-    
+
     include("util-reator-pistao.jl")
     toc = PlutoUI.TableOfContents(title = "Tópicos")
 end
@@ -157,8 +157,17 @@ T=T_{w}-(T_{w}-T_{0})\exp\left(-\frac{\hat{h}P}{\rho{}u{}c_{p}A_{c}}z\right)
 
 # ╔═╡ af4440bb-7ca3-4229-9145-9f4c8d2d6af2
 "Solução analítica do reator pistão circular no espaço das temperaturas."
-function analyticalthermalpfr(; P::T, A::T, Tₛ::T, Tₚ::T, ĥ::T, u::T, ρ::T,
-                                cₚ::T, z::Vector{T})::Vector{T} where T
+function analyticalthermalpfr(;
+    P::T,
+    A::T,
+    Tₛ::T,
+    Tₚ::T,
+    ĥ::T,
+    u::T,
+    ρ::T,
+    cₚ::T,
+    z::Vector{T},
+)::Vector{T} where {T}
     return @. Tₛ - (Tₛ - Tₚ) * exp(-z * (ĥ * P) / (ρ * u * cₚ * A))
 end
 
@@ -243,8 +252,18 @@ Para integração do modelo simbólico necessitamos substituir os parâmetros po
 
 # ╔═╡ a683ff7b-44ef-4872-bb4a-c39da1e1650d
 "Integra o modelo diferencial de reator pistão"
-function solveodepfr(; model::DifferentialEquationPFR, P::T, A::T, Tₛ::T, Tₚ::T,
-                       ĥ::T, u::T, ρ::T, cₚ::T, z::Vector{T}) where T
+function solveodepfr(;
+    model::DifferentialEquationPFR,
+    P::T,
+    A::T,
+    Tₛ::T,
+    Tₚ::T,
+    ĥ::T,
+    u::T,
+    ρ::T,
+    cₚ::T,
+    z::Vector{T},
+) where {T}
     T₀ = [model.T => Tₚ]
 
     p = [
@@ -397,8 +416,18 @@ A dependência de ``E`` somente em ``P`` faz com que tenhamos uma matriz diagona
 
 # ╔═╡ e08d8341-f3a5-4ff1-b18e-19e9a0757b24
 "Integra reator pistão circular no espaço das temperaturas."
-function solvethermalpfr(; mesh::AbstractDomainFVM, P::T, A::T, Tₛ::T, Tₚ::T,
-                         ĥ::T, u::T, ρ::T, cₚ::T, z::Vector{T}) where T
+function solvethermalpfr(;
+    mesh::AbstractDomainFVM,
+    P::T,
+    A::T,
+    Tₛ::T,
+    Tₚ::T,
+    ĥ::T,
+    u::T,
+    ρ::T,
+    cₚ::T,
+    vars...,
+) where {T}
     N = length(mesh.z) - 1
     a = (ρ * u * cₚ * A) / (ĥ * P * mesh.δ)
 
@@ -408,7 +437,7 @@ function solvethermalpfr(; mesh::AbstractDomainFVM, P::T, A::T, Tₛ::T, Tₚ::T
     b = ones(N)
     b[1] = 1 + A⁻ * Tₚ
 
-    M = spdiagm(-1 => -A⁻*ones(N-1), 0 => +A⁺*ones(N+0))
+    M = spdiagm(-1 => -A⁻ * ones(N - 1), 0 => +A⁺ * ones(N + 0))
     U = similar(mesh.z)
 
     U[1] = Tₚ
@@ -463,7 +492,7 @@ const P = π * reactor.D
 
 # ╔═╡ a23296bb-dfa6-439d-94e9-c7e072af1d6c
 "Área da seção circula do reator [m²]."
-const A = π * (reactor.D/2)^2
+const A = π * (reactor.D / 2)^2
 
 # ╔═╡ 88aa55d3-519d-4d74-a553-890e9bb56bb5
 "Gráficos padronizados para este notebook."
@@ -497,7 +526,7 @@ let
     Tₐ = analyticalthermalpfr(; pars...)
 
     standardplot(quote
-        lines!(ax, $z, $Tₐ, color = :red,   linewidth = 5, label = "Analítica")
+        lines!(ax, $z, $Tₐ, color = :red, linewidth = 5, label = "Analítica")
         Tend = @sprintf("%.2f", $Tₐ[end])
     end)
 end
@@ -514,7 +543,7 @@ let
     Tₒ = solveodepfr(; model = model, pars...)[:T]
 
     standardplot(quote
-        lines!(ax, $z, $Tₐ, color = :red,   linewidth = 5, label = "Analítica")
+        lines!(ax, $z, $Tₐ, color = :red, linewidth = 5, label = "Analítica")
         lines!(ax, $z, $Tₒ, color = :black, linewidth = 2, label = "EDO")
         Tend = @sprintf("%.2f", $Tₒ[end])
     end)
@@ -527,7 +556,7 @@ let
     x, Tₑ = data[:, 1], data[:, 2]
 
     mesh = ImmersedConditionsFVM(; L = reactor.L, N = 10000)
-    
+
     z = mesh.z
     ĥ = computehtc(; reactor..., fluid..., u = operations.u)
 
@@ -536,11 +565,11 @@ let
     model = DifferentialEquationPFR()
     Tₐ = analyticalthermalpfr(; pars...)
     Tₒ = solveodepfr(; model = model, pars...)[:T]
-    
+
     standardplot(quote
-        lines!(ax, $z, $Tₐ, color = :red,   linewidth = 5, label = "Analítica")
+        lines!(ax, $z, $Tₐ, color = :red, linewidth = 5, label = "Analítica")
         lines!(ax, $z, $Tₒ, color = :black, linewidth = 2, label = "EDO")
-        lines!(ax, $x, $Tₑ, color = :blue,  linewidth = 2, label = "CFD")
+        lines!(ax, $x, $Tₑ, color = :blue, linewidth = 2, label = "CFD")
 
         for N in [20, 100]
             meshN = ImmersedConditionsFVM(; L = $reactor.L, N = N)
@@ -549,7 +578,7 @@ let
             # Experimente substituir a linha acima pelo código abaixo:
             # lines!(ax, meshN.z, T; label = "N = $(N)")
         end
-        
+
         Tend = @sprintf("%.2f", $Tₐ[end])
     end)
 end
