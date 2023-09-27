@@ -79,6 +79,9 @@ struct IncompressibleEnthalpyPFRModel <: AbstractPFRModel
     "Fluxo mássico através do reator [kg/s]."
     ṁ::Float64
 
+    "Coeficiente de troca térmica convectiva [W/(m².K)]."
+    ĥ::Float64
+
     """	Construtor interno dos dados de reatores.
 
     - `N`  : Número de células no sistema, incluindo limites.
@@ -116,7 +119,7 @@ struct IncompressibleEnthalpyPFRModel <: AbstractPFRModel
         fvdata.x[1:end] .= T
         fvdata.c[1] = (ĥ * P * mesh.δ) / ṁ
 
-        return new(mesh, fvdata, h, ṁ)
+        return new(mesh, fvdata, h, ṁ, ĥ)
     end
 end
 

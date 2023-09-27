@@ -39,6 +39,15 @@ Neste notebook trataremos dois casos: (I)... TODO
 $(toc)
 """
 
+# ╔═╡ 67b0a6ab-c128-4ab6-b588-c2322b0e61e9
+md"""
+## Reatores em contra corrente
+
+### Condição de troca térmica
+
+No que se segue não se fará hipótese de que ambos os escoamentos se dão com o mesmo fluido ou que no caso de mesmo fluido as velocidades são comparáveis. Neste caso mais geral, o número de Nusselt de cada lado da interface difere e portanto o coeficiente de troca térmica. É portanto necessário estabelecer-se uma condição de fluxo constante na interface das malhas para assegurar a conservação global da energia no sistema... TODO (escrever, já programado)
+"""
+
 # ╔═╡ dcfd8b59-429f-4c99-9eae-1aa34fa87033
 const reactor = notedata.c03.reactor
 
@@ -53,7 +62,7 @@ const operations2 = notedata.c03.operations2
 
 # ╔═╡ 04cf5b92-d10b-43f5-8fc5-1e549105ef9d
 md"""
-## Reatores em contra-corrente I
+## Estudo de caso I
 
 O par escolhido para exemplificar o comportamento de contra-corrente dos reatores
 pistão tem por característica de que cada reator ocupa a metade de um cilindro de diâmetro `D` = $(reactor.D) m de forma que o perímetro de troca é igual o diâmetro e a área transversal a metade daquela do cilindro. A temperatura inicial do fluido no reator (1) que escoa da esquerda para a direita é de $(operations1.Tₚ) K e naquele em contra-corrente (2) é de $(operations2.Tₚ) K.
@@ -65,79 +74,123 @@ O fluido do reator (2) tem um calor específico que é o triplo daquele do reato
 "Cria um par padronizado de reatores para simulação exemplo."
 function createprfpair(; N = 10)
     shared = (
-        N = N, 
+        N = N,
         L = reactor.L,
         P = reactor.D,
         A = 0.5π * (reactor.D/2)^2,
         ρ = fluid1.ρ
     )
-    
+
+    ĥ₁ = computehtc(; reactor..., fluid1..., u = operations1.u, verbose = false)
+    ĥ₂ = computehtc(; reactor..., fluid1..., u = operations2.u, verbose = false)
+
     r₁ = IncompressibleEnthalpyPFRModel(;
-        shared...,	
+        shared...,
         T = operations1.Tₚ,
         u = operations1.u,
-        ĥ = computehtc(; reactor..., fluid1..., u = operations1.u),
+        ĥ = ĥ₁,
         h = (T) -> 1.0fluid1.cₚ * T + 1000.0
     )
 
     r₂ = IncompressibleEnthalpyPFRModel(;
-        shared...,	
+        shared...,
         T = operations2.Tₚ,
         u = operations2.u,
-        # THINK ABOUT THIS!
-        # ĥ = computehtc(; reactor..., fluid1..., u = operations2.u),
-        ĥ = computehtc(; reactor..., fluid1..., u = operations1.u),
+        ĥ = ĥ₂,
         h = (T) -> 3.0fluid1.cₚ * T + 1000.0,
     )
 
     return r₁ , r₂
 end
 
-# ╔═╡ 887b33b5-7f9d-43ff-ae86-20ae6f04735e
-struct CounterFlowPFRModel
-    myself::IncompressibleEnthalpyPFRModel
-    neighbor::IncompressibleEnthalpyPFRModel
-end
-
-# ╔═╡ 77bc010d-9f24-407c-b1c6-38e89f4e774b
+# ╔═╡ 9c5365bc-5c88-4e9c-81d3-17586f6ccae3
 begin
+    @info "IncompressibleEnthalpyPFRModel methods"
+
     function matrix(r::IncompressibleEnthalpyPFRModel)
         return r.fvdata.A
     end
+
     function vector(r::IncompressibleEnthalpyPFRModel)
         return r.fvdata.b
     end
+
     function coefs(r::IncompressibleEnthalpyPFRModel)
         return r.fvdata.c
     end
+
     function temperature(r::IncompressibleEnthalpyPFRModel)
         return r.fvdata.x
     end
+
     function massflowrate(r::IncompressibleEnthalpyPFRModel)
         return r.ṁ
     end
+
     function enthalpyfn(r::IncompressibleEnthalpyPFRModel)
         return r.enthalpy
     end
+
+    function enthalpyrate(r::IncompressibleEnthalpyPFRModel)
+        ḣ(h, ṁ, T) = ṁ * (h(T[end]) - h(T[1]))
+        return ḣ(enthalpyfn(r), massflowrate(r), temperature(r))
+    end
+end;
+
+# ╔═╡ 8b677cdd-bd4e-447a-aa78-99b5cab810a6
+begin
+    @info "CounterFlowPFRModel methods"
+
+    struct CounterFlowPFRModel
+        myself::IncompressibleEnthalpyPFRModel
+        neighbor::IncompressibleEnthalpyPFRModel
+    end
+
     function thisreactor(cf::CounterFlowPFRModel)
         return cf.myself
     end
+
     function otherreactor(cf::CounterFlowPFRModel)
         return cf.neighbor
     end
+
     function annexed(cf::CounterFlowPFRModel)
         return CounterFlowPFRModel(cf.neighbor, cf.myself)
     end
+
     function temperature(cf::CounterFlowPFRModel)
         return temperature(cf.myself)
     end
+
     function neighbortemperature(cf::CounterFlowPFRModel)
         return reverse(temperature(cf.neighbor))
     end
+
     function surfacetemperature(cf::CounterFlowPFRModel)
-        T = neighbortemperature(cf)
-        return 0.5 * (T[1:end-1] + T[2:end])
+        # Energy conservation constraint!
+        T1 = temperature(cf)
+        T2 = neighbortemperature(cf)
+
+        ĥ1 = cf.myself.ĥ
+        ĥ2 = cf.neighbor.ĥ
+
+        Tw1 = 0.5 * (T1[1:end-1] + T1[2:end])
+        Tw2 = 0.5 * (T2[1:end-1] + T2[2:end])
+
+        return (ĥ1 * Tw1 + ĥ2 * Tw2) / (ĥ1 + ĥ2)
     end
+
+    function enthalpyresidual(cf::CounterFlowPFRModel)
+        Δha = enthalpyrate(thisreactor(cf))
+        Δhb = enthalpyrate(otherreactor(cf))
+        return abs(Δhb + Δha) / abs(Δha)
+    end
+end;
+
+# ╔═╡ 77bc010d-9f24-407c-b1c6-38e89f4e774b
+begin
+    @info "Solution auxiliary methods"
+
     function updatetemperature(A, b, a, T, S, f, h, α)
         b[1:end] = a * (2S - T[1:end-1] - T[2:end])
         b[1] += 2h(T[1])
@@ -147,15 +200,7 @@ begin
         T[2:end] += ΔT
         return εm
     end
-    function enthalpyrate(r::IncompressibleEnthalpyPFRModel)
-        ḣ(h, ṁ, T) = ṁ * (h(T[end]) - h(T[1]))
-        return ḣ(enthalpyfn(r), massflowrate(r), temperature(r))
-    end
-    function enthalpyresidual(cf::CounterFlowPFRModel)
-        Δha = enthalpyrate(thisreactor(cf))
-        Δhb = enthalpyrate(otherreactor(cf))
-        return abs(Δhb + Δha) / abs(Δha)
-    end
+
     function innerloop(;
         cf::CounterFlowPFRModel,
         M::Int64 = 1,
@@ -170,7 +215,7 @@ begin
         a = coefs(r)[1]
         h = enthalpyfn(r)
         f = (Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ)
-    
+
         niter = 0
         while (niter < M)
             niter += 1
@@ -180,6 +225,7 @@ begin
             end
         end
     end
+
     function outerloop(
             cf::CounterFlowPFRModel;
             inner::Int64 = 5,
@@ -194,13 +240,11 @@ begin
         # maxsteps = outer * inner
         # residualsa = -ones(maxsteps)
         # residualsb = -ones(maxsteps)
-    
-        @info("Conservação da entalpia = $(enthalpyresidual(cf))")
-        
+
         @time for nouter in 1:outer
             innerloop(; cf = ra, M = inner, α = relax, ε = ΔTmax)
             innerloop(; cf = rb, M = inner, α = relax, ε = ΔTmax)
-    
+
             if enthalpyresidual(cf) < Δhmax
                 @info("Laço externo convergiu após $(nouter) iterações")
                 break
@@ -208,80 +252,58 @@ begin
         end
         @info("Conservação da entalpia = $(enthalpyresidual(cf))")
     end
-end
+end;
+
+# ╔═╡ 2d296ee3-ed4b-422a-9573-d10bbbdce344
+begin
+    @info "Post-processing methods"
+
+    "Ilustração padronizada para a simulação exemplo."
+    function plotpfrpair(cf::CounterFlowPFRModel; ylims = (300, 400), loc = :rb)
+        z1 = thisreactor(cf).mesh.z
+        T1 = temperature(cf)
+        T2 = neighbortemperature(cf)
+
+        fig = Figure(resolution = (720, 500))
+        ax = Axis(fig[1, 1])
+        stairs!(ax, z1, T1, label = "r₁", color = :blue, step = :center)
+        stairs!(ax, z1, T2, label = "r₂", color = :red, step = :center)
+        ax.xticks = range(0.0, z1[end], 6)
+        ax.yticks = range(ylims..., 6)
+        ax.xlabel = "Posição [m]"
+        ax.ylabel = "Temperatura [K]"
+        xlims!(ax, (0, z1[end]))
+        ylims!(ax, ylims)
+        axislegend(position = loc)
+        fig
+    end
+end;
 
 # ╔═╡ b1ccbbf0-cded-4831-8ecf-4b5534ae9fa4
-ra, rb = let
-    r₁, r₂ = createprfpair(; N = 500)
+let
+    r₁, r₂ = createprfpair(; N = 1000)
     cf = CounterFlowPFRModel(r₁, r₂)
 
     outerloop(cf;
-        inner = 10,
+        inner = 25,
         outer = 500,
         relax = 0.99,
-        Δhmax = 1.0e-08,
+        Δhmax = 1.0e-06,
         ΔTmax = 1.0e-08
     )
 
-    temperature(cf), neighbortemperature(cf)
+    # temperature(cf), neighbortemperature(cf)
+    plotpfrpair(cf)
 end
-
-# ╔═╡ 92d55286-e273-41f2-a856-45f094ecbd33
-# function counterflowsolver(
-#     ra::IncompressibleEnthalpyPFRModel,
-#     rb::IncompressibleEnthalpyPFRModel;
-#     inner::Int64 = 5,
-#     outer::Int64 = 500,
-#     relax::Float64 = 0.95,
-#     Δhmax::Float64 = 1.0e-08,
-#     ΔTmax::Float64 = 1.0e-08,
-# )
-#     fa = (Tₖ, hₖ) -> find_zero(t -> ra.h(t) - hₖ, Tₖ)
-#     fb = (Tₖ, hₖ) -> find_zero(t -> rb.h(t) - hₖ, Tₖ)
-#     # maxsteps = outer * inner
-#     # residualsa = -ones(maxsteps)
-#     # residualsb = -ones(maxsteps)
-
-#     @time for nouter in 1:outer
-#         Ts = getsurfacetemperature(rb)
-#         innerloop(ra, Ts, inner, relax, ΔTmax)
-
-#         Ts = getsurfacetemperature(ra)
-#         innerloop(rb, Ts, inner, relax, ΔTmax)
-
-#         if 0.0 < enthalpyresidual(ra, rb) < Δhmax
-#             @info("Laço externo convergiu após $(nouter) iterações")
-#             break
-#         end
-#     end
-
-#     @info("Conservação da entalpia = $(enthalpyresidual(ra, rb))")
-# end
-
-# ╔═╡ 9d825afc-21de-4de5-b293-4e28638dc7cc
-# "Resíduo relativo da conservação da entalpia."
-function enthalpyresidual(ra, rb)
-    Δha = ra.ṁ * enthalpychange(ra)
-    Δhb = rb.ṁ * enthalpychange(rb)
-    return abs(Δhb + Δha) / abs(Δhb)
-end
-
-# ╔═╡ 397322c6-2d5b-4808-b243-1cd018e7150f
-# "Variação de entalpia entre entrada e saída do reator."
-
-
-# ╔═╡ e8bf2c23-e999-44af-ad2b-243bfc5c8f52
-
-
-# ╔═╡ 4186d2eb-0da6-4f68-ba41-e92bf7423041
-
-
-# ╔═╡ eed9710f-ba5e-4961-8215-177a9d4c4752
-
 
 # ╔═╡ f3b7d46f-0fcc-4f68-9822-f83e977b87ee
 md"""
-## Reator conceitual incompressível
+## Estudo de caso II
+"""
+
+# ╔═╡ 975744de-7ab0-4bfa-abe5-3741ec7ec1cf
+md"""
+## Anexos
 """
 
 # ╔═╡ e5d12839-8167-4ddf-843f-f8ad0f682126
@@ -317,11 +339,6 @@ md"""
 #     plotpfrpair(r₁, r₂; ylim = (300, 400), loc = :rb)
 # end
 
-# ╔═╡ 7912192d-1528-48ce-9adc-7e6a26b25c51
-md"""
-## Reator com fase sólida e gás
-"""
-
 # ╔═╡ c69be00a-40d4-4c25-aa47-ffb38ccaecec
 # let
 #     inner = 5
@@ -356,25 +373,6 @@ md"""
 #     plotpfrpair(r₁, r₂; ylim = (200, 2200), loc = :rb)
 # end
 
-# ╔═╡ b46e7129-72e7-470b-b7e8-4a30f5bed259
-# let
-#     r₁, r₂ = createprfgassolidpair(500)
-
-
-
-#     plotpfrpair(r₁, r₂; ylim = (200, 2200), loc = :rb)
-# end
-
-# ╔═╡ 975744de-7ab0-4bfa-abe5-3741ec7ec1cf
-md"""
-## Anexos
-"""
-
-# ╔═╡ 5007aa03-6db0-4626-a73c-9172fef2c4ea
-md"""
-### Criação de exemplos
-"""
-
 # ╔═╡ 630ba246-b5fb-4f9d-a9d2-b2edb471ada0
 # "Cria um par padronizado de reatores para simulação exemplo."
 # function createprfgassolidpair(N; debug = true)
@@ -406,154 +404,10 @@ md"""
 #     return r₁, r₂
 # end
 
-# ╔═╡ be3a4933-516e-4867-a801-4df4f695432a
-md"""
-### Funções físicas
-"""
-
-# ╔═╡ 5a492522-9db4-44bc-80d4-6aca529560de
-# """
-# Simula reator pistão formulado na entalpia.
-
-# - `r`  : Reator a ser simulado.
-# - `Tₛ` : Temperatura da superfície do reator [K].
-# - `M`  : Máximo número de iterações para a solução.
-# - `α`  : Fator de relaxação da solução entre iterações.
-# - `ε`  : Tolerância absoluta da solução.
-# """
-# function solveenthalpypfr(;
-#     r::PFRData,
-#     Tₛ::Vector{Float64},
-#     M::Int64 = 100,
-#     α::Float64 = 0.95,
-#     ε::Float64 = 1.0e-06,
-# )::Bool
-#     residual = -1.0
-#     niter = 0
-
-#     T = @view r.T[1:end]
-#     b = @view r.b[1:end]
-#     a = r.a
-#     h = r.h
-
-#     f = (Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ)
-
-#     while (niter < M)
-#         niter += 1
-
-#         # Atualiza condições limites do problema.
-#         b[1:end] = a * (2Tₛ - T[1:end-1] - T[2:end])
-#         b[1] += 2h(T[1])
-
-#         # Calcula nova temperatura (trial).
-#         U = map(f, T[2:end], r.K \ b)
-
-#         # Incremento da solução.
-#         Δ = (1-α) * (U - T[2:end])
-
-#         # Relaxa solução para evitar divergência.
-#         T[2:end] += Δ
-
-#         # Verica progresso da solução.
-#         residual = maximum(abs.(Δ))
-
-#         if (residual <= ε)
-#             # @debug("Laço interno convergiu após $(niter) iterações")
-#             return true
-#         end
-#     end
-
-#     # @debug("Laço interno: após $(niter) iterações → $(residual)")
-#     return false
-# end
-
-# ╔═╡ 1e48a850-f92c-4a7e-aef8-8e52e45eba30
-md"""
-### Funções gráficas
-"""
-
-# ╔═╡ d24c4ccc-70a3-4e37-a800-e57d54df3b48
-# "Ilustração padronizada para a simulação exemplo."
-# function plotpfrpair(r₁, r₂; ylims = (300, 400), loc = :rb)
-#     z₁ = r₁.z
-#     z₂ = L .- z₁
-
-#     fig = Figure(resolution = (720, 500))
-#     ax = Axis(fig[1, 1])
-#     stairs!(ax, z₁, r₁.T, label = "r₁", color = :blue, step = :center)
-#     stairs!(ax, z₂, r₂.T, label = "r₂", color = :red, step = :center)
-#     ax.xticks = range(0.0, L, 6)
-#     ax.yticks = range(ylim..., 6)
-#     ax.xlabel = "Posição [m]"
-#     ax.ylabel = "Temperatura [K]"
-#     xlims!(ax, (0, L))
-#     ylims!(ax, ylims)
-#     axislegend(position = loc)
-#     fig
-# end
-
-# ╔═╡ d684dc5e-d78d-484f-a820-317406d9a41a
-# "Plot results of standard PFR solution"
-# function plotgassolidpfr(; gas, sol = nothing)
-#     xlaba = "Position [m]"
-#     ylab1 = "Temperature [K]"
-#     ylab2 = "Velocity [m/s]"
-#     ylab3 = "Density [kg/m³]"
-#     ylab4 = "Pressure [Pa]"
-
-#     xlims = (0.0, L)
-#     xticks = range(xlims..., 6)
-
-#     fig = Figure(resolution = (1000, 700))
-#     axes = fig[1, 1] = GridLayout()
-
-#     ax1 = Axis(axes[1, 1], ylabel = ylab1, xlabel = xlaba, xticks = xticks)
-#     ax2 = Axis(axes[2, 1], ylabel = ylab2, xlabel = xlaba, xticks = xticks)
-#     ax3 = Axis(axes[1, 2], ylabel = ylab3, xlabel = xlaba, xticks = xticks)
-#     ax4 = Axis(axes[2, 2], ylabel = ylab4, xlabel = xlaba, xticks = xticks)
-
-#     xlims!(ax1, xlims)
-#     xlims!(ax2, xlims)
-#     xlims!(ax3, xlims)
-#     xlims!(ax4, xlims)
-
-#     linkxaxes!(ax1, ax2, ax3, ax4)
-
-#     z = gas[:z]
-#     T = gas[:T]
-#     u = gas[:u]
-#     Ρ = gas[:Ρ]
-#     p = gas[:p] .- 101_325.0
-
-#     lines!(ax1, z, T, label = "Gas")
-#     lines!(ax2, z, u, label = "Gas")
-#     lines!(ax3, z, Ρ, label = "Gas")
-#     lines!(ax4, z, p, label = "Gas")
-
-#     if !isnothing(sol)
-#         z = reverse(sol[:z])
-#         T = sol[:T]
-#         u = sol[:u]
-
-#         lines!(ax1, z, T, label = "Solid")
-#         lines!(ax2, z, u, label = "Solid")
-#     end
-
-#     axislegend(ax1)
-#     axislegend(ax2)
-#     axislegend(ax3)
-#     axislegend(ax4)
-
-#     return fig
-# end
-
 # ╔═╡ 0e2360a8-0653-4faa-b909-1ab84ca9fbac
 md"""
 ### Dados
 """
-
-# ╔═╡ f307de6d-f197-47d6-a1a6-b1262e7569e0
-
 
 # ╔═╡ d76d9e69-8830-4190-994f-49689d44b506
 # "Comprimento do reator [m]"
@@ -612,36 +466,24 @@ md"""
 
 # ╔═╡ Cell order:
 # ╟─f33f5453-dd05-4a4e-ae12-695320fcd70d
+# ╟─67b0a6ab-c128-4ab6-b588-c2322b0e61e9
 # ╟─04cf5b92-d10b-43f5-8fc5-1e549105ef9d
-# ╠═dcfd8b59-429f-4c99-9eae-1aa34fa87033
-# ╠═9f94f21d-2805-4b30-8451-7b09b575081c
-# ╠═cc1a6701-8907-440a-a77b-b89ec6abac65
-# ╠═f1cc566b-87bb-42be-a0a5-c160f326817f
-# ╠═9a529019-9cfc-4018-a7ce-051e6dbdd85e
-# ╠═887b33b5-7f9d-43ff-ae86-20ae6f04735e
-# ╠═77bc010d-9f24-407c-b1c6-38e89f4e774b
-# ╠═b1ccbbf0-cded-4831-8ecf-4b5534ae9fa4
-# ╠═92d55286-e273-41f2-a856-45f094ecbd33
-# ╠═9d825afc-21de-4de5-b293-4e28638dc7cc
-# ╠═397322c6-2d5b-4808-b243-1cd018e7150f
-# ╠═e8bf2c23-e999-44af-ad2b-243bfc5c8f52
-# ╠═4186d2eb-0da6-4f68-ba41-e92bf7423041
-# ╠═eed9710f-ba5e-4961-8215-177a9d4c4752
+# ╟─dcfd8b59-429f-4c99-9eae-1aa34fa87033
+# ╟─9f94f21d-2805-4b30-8451-7b09b575081c
+# ╟─cc1a6701-8907-440a-a77b-b89ec6abac65
+# ╟─f1cc566b-87bb-42be-a0a5-c160f326817f
+# ╟─9a529019-9cfc-4018-a7ce-051e6dbdd85e
+# ╟─9c5365bc-5c88-4e9c-81d3-17586f6ccae3
+# ╟─8b677cdd-bd4e-447a-aa78-99b5cab810a6
+# ╟─77bc010d-9f24-407c-b1c6-38e89f4e774b
+# ╟─2d296ee3-ed4b-422a-9573-d10bbbdce344
+# ╟─b1ccbbf0-cded-4831-8ecf-4b5534ae9fa4
 # ╟─f3b7d46f-0fcc-4f68-9822-f83e977b87ee
-# ╠═e5d12839-8167-4ddf-843f-f8ad0f682126
-# ╟─7912192d-1528-48ce-9adc-7e6a26b25c51
-# ╠═c69be00a-40d4-4c25-aa47-ffb38ccaecec
-# ╠═b46e7129-72e7-470b-b7e8-4a30f5bed259
 # ╟─975744de-7ab0-4bfa-abe5-3741ec7ec1cf
-# ╟─5007aa03-6db0-4626-a73c-9172fef2c4ea
+# ╠═e5d12839-8167-4ddf-843f-f8ad0f682126
+# ╠═c69be00a-40d4-4c25-aa47-ffb38ccaecec
 # ╠═630ba246-b5fb-4f9d-a9d2-b2edb471ada0
-# ╟─be3a4933-516e-4867-a801-4df4f695432a
-# ╠═5a492522-9db4-44bc-80d4-6aca529560de
-# ╟─1e48a850-f92c-4a7e-aef8-8e52e45eba30
-# ╠═d24c4ccc-70a3-4e37-a800-e57d54df3b48
-# ╠═d684dc5e-d78d-484f-a820-317406d9a41a
 # ╟─0e2360a8-0653-4faa-b909-1ab84ca9fbac
-# ╠═f307de6d-f197-47d6-a1a6-b1262e7569e0
 # ╠═d76d9e69-8830-4190-994f-49689d44b506
 # ╠═243ce122-61cf-4697-9f13-1710afef8e5c
 # ╠═25f64410-97d0-43f7-a8b1-de0983265a7c
@@ -654,4 +496,4 @@ md"""
 # ╠═b7f5a299-360e-455c-9886-bcd2b4791a25
 # ╠═b30e0fb9-d505-41e5-8a7d-1e8f2cbc2bbc
 # ╟─54aa6060-a605-4a05-83f1-2b672f1d148f
-# ╠═fe2c3680-5b91-11ee-282c-c74d3b01ef9b
+# ╟─fe2c3680-5b91-11ee-282c-c74d3b01ef9b
