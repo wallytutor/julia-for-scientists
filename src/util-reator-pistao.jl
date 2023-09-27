@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
+using DocStringExtensions
+using SparseArrays: SparseMatrixCSC
+
+"Constante dos gases ideais [J/(mol.K)]."
+const GAS_CONSTANT = 8.314_462_618_153_24
 
 "Tipo abstrato para domínios em FVM."
 abstract type AbstractDomainFVM end
+
+"Tipo abstrato para um modelo de reator pistão."
+abstract type AbstractPFRModel end
 
 "Método dos volumes finitos com condição limite imersa."
 struct ImmersedConditionsFVM <: AbstractDomainFVM
@@ -19,6 +27,96 @@ struct ImmersedConditionsFVM <: AbstractDomainFVM
         z = collect(0.0:δ:L)
         w = collect(0.5δ:δ:L-0.5δ)
         return new(z, w, δ)
+    end
+end
+
+"Contém dados do sistema linear ``Ax=b(a)`` de um modelo.
+
+$(TYPEDFIELDS)
+"
+struct SparseLinearProblemData
+    "Matriz do problema."
+    A::SparseMatrixCSC{Float64, Int64}
+
+    "Vetor do problema."
+    b::Vector{Float64}
+
+    "Coeficientes do problema."
+    c::Vector{Float64}
+
+    "Solução do problema."
+    x::Vector{Float64}
+
+	"Tamanho do problema linear."
+	n::Int64
+
+	function SparseLinearProblemData(; 
+            A::SparseMatrixCSC{Float64, Int64}, 
+            b::Vector{Float64}, 
+            c::Vector{Float64},
+            extended::Bool = true
+        )
+        n = length(b)
+        x = zeros(extended ? n+1 : n)
+		return new(A, b, c, x, n)
+	end
+end
+
+"Estrutura com memória do estado de um reator.
+
+$(TYPEDFIELDS)
+"
+struct IncompressibleEnthalpyPFRModel <: AbstractPFRModel
+    "Estrutura de discretização espacial."
+    mesh::ImmersedConditionsFVM
+
+    "Dados para a solução do problema."
+    fvdata::SparseLinearProblemData
+
+    "Entalpia em função da temperatura [J/kg]."
+    enthalpy::Function
+
+    "Fluxo mássico através do reator [kg/s]."
+    ṁ::Float64
+
+    """	Construtor interno dos dados de reatores.
+
+    - `N`  : Número de células no sistema, incluindo limites.
+    - `L`  : Comprimento do reator [m].
+    - `P`  : Perímetro da seção [m].
+    - `A`  : Área da seção [m²].
+    - `T`  : Temperatura inicial do fluido [K].
+    - `u`  : Velocidade do fluido [m/s].
+    - `ĥ`  : Coeficiente de troca convectiva [W/(m².K)].
+    - `ρ`  : Densidade do fluido [kg/m³].
+    - `h`  : Entalpia em função da temperatura [J/kg]
+    """
+    function IncompressibleEnthalpyPFRModel(;
+            N::Int64,
+            L::Float64,
+            P::Float64,
+            A::Float64,
+            T::Float64,
+            u::Float64,
+            ĥ::Float64,
+            ρ::Float64,
+            h::Function,
+        )
+        ṁ = ρ * u * A
+        
+        mesh = ImmersedConditionsFVM(; L = L, N = N)
+	
+        fvdata = SparseLinearProblemData(
+            A = 2spdiagm(0=>ones(N), -1=>-ones(N-1)),
+            b = ones(N),
+            c = zeros(1),
+            extended = true
+        )
+
+        fvdata.x[1:end] .= T
+        fvdata.c[1] = (ĥ * P * mesh.δ) / ṁ
+
+        return new(mesh, fvdata, h, ṁ)
     end
 end
 
@@ -112,6 +210,26 @@ const notedata = (
             u = 1.0,     # Velocidade do fluido [m/s]
             Tₚ = 300.0,  # Temperatura de entrada do fluido [K]
             Tₛ = 400.0   # Temperatura da parede do reator [K]
+        )
+    ),
+    c03 = (
+        reactor = (
+            L = 10.0,    # Comprimento do reator [m]
+            D = 0.01     # Diâmetro do reator [m]
+        ),
+        fluid1 = (
+            ρ = 1000.0,  # Mass específica do fluido [kg/m³]
+            μ = 0.001,   # Viscosidade do fluido [Pa.s]
+            cₚ = 4182.0, # Calor específico do fluido [J/(kg.K)]
+            Pr = 6.9     # Número de Prandtl do fluido
+        ),
+        operations1 = (
+            u = 1.0,     # Velocidade do fluido [m/s]
+            Tₚ = 300.0,  # Temperatura de entrada do fluido [K]
+        ),
+        operations2 = (
+            u = 2.0,     # Velocidade do fluido [m/s]
+            Tₚ = 400.0,  # Temperatura de entrada do fluido [K]
         )
     ),
 )
