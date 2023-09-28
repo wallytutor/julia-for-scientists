@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 using DocStringExtensions
+using Polynomials
 using SparseArrays: SparseMatrixCSC
 
 "Constante dos gases ideais [J/(mol.K)]."
@@ -47,19 +48,19 @@ struct SparseLinearProblemData
     "Solução do problema."
     x::Vector{Float64}
 
-	"Tamanho do problema linear."
-	n::Int64
+    "Tamanho do problema linear."
+    n::Int64
 
-	function SparseLinearProblemData(; 
-            A::SparseMatrixCSC{Float64, Int64}, 
-            b::Vector{Float64}, 
+    function SparseLinearProblemData(;
+            A::SparseMatrixCSC{Float64, Int64},
+            b::Vector{Float64},
             c::Vector{Float64},
             extended::Bool = true
         )
         n = length(b)
         x = zeros(extended ? n+1 : n)
-		return new(A, b, c, x, n)
-	end
+        return new(A, b, c, x, n)
+    end
 end
 
 "Estrutura com memória do estado de um reator.
@@ -106,9 +107,9 @@ struct IncompressibleEnthalpyPFRModel <: AbstractPFRModel
             h::Function,
         )
         ṁ = ρ * u * A
-        
+
         mesh = ImmersedConditionsFVM(; L = L, N = N)
-	
+
         fvdata = SparseLinearProblemData(
             A = 2spdiagm(0=>ones(N), -1=>-ones(N-1)),
             b = ones(N),
@@ -151,17 +152,17 @@ function computehtc(; L, D, u, ρ, μ, cₚ, Pr,
     k = cₚ * μ / Pr
     h = Nu * k / D
 
-	if verbose
-	    println("""\
-	        Reynolds ................... $(Re)
-	        Nusselt (Gnielinsk) ........ $(Nug)
-	        Nusselt (Dittus-Boelter) ... $(Nud)
-	        Nusselt (usado aqui) ....... $(Nu)
-	        k .......................... $(k) W/(m.K)
-	        h .......................... $(h) W/(m².K)\
-	        """)
-	end
-	
+    if verbose
+        println("""\
+            Reynolds ................... $(Re)
+            Nusselt (Gnielinsk) ........ $(Nug)
+            Nusselt (Dittus-Boelter) ... $(Nud)
+            Nusselt (usado aqui) ....... $(Nu)
+            k .......................... $(k) W/(m.K)
+            h .......................... $(h) W/(m².K)\
+            """)
+    end
+
     return h
 end
 
@@ -226,6 +227,22 @@ const notedata = (
             cₚ = 4182.0, # Calor específico do fluido [J/(kg.K)]
             Pr = 6.9     # Número de Prandtl do fluido
         ),
+        fluid3 = (
+            # Viscosidade do fluido [Pa.s]
+            μpoly = Polynomial([
+                1.7e-05 #TODO copy good here!
+            ], :T),
+            # Calor específico do fluido [J/(kg.K)]
+            cₚpoly = Polynomial([
+                    959.8458126240355,
+                    0.3029051601580761,
+                    3.988896105280984e-05,
+                    -6.093647929461819e-08,
+                    1.0991100692950414e-11
+                ], :T),
+            # Número de Prandtl do fluido
+            Pr = 0.70
+        ),
         operations1 = (
             u = 1.0,     # Velocidade do fluido [m/s]
             Tₚ = 300.0,  # Temperatura de entrada do fluido [K]
@@ -233,6 +250,10 @@ const notedata = (
         operations2 = (
             u = 2.0,     # Velocidade do fluido [m/s]
             Tₚ = 400.0,  # Temperatura de entrada do fluido [K]
+        ),
+        operations3 = (
+            u = 3.0,      # Velocidade do fluido [m/s]
+            Tₚ = 2000.0,  # Temperatura de entrada do fluido [K]
         )
     ),
 )
