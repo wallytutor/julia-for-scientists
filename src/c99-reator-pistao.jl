@@ -44,6 +44,10 @@ html"""
 </li>
 <li style="height: 25px;">
   <input type="checkbox" />
+  <label>O precedente com um modelo de efeitos difusivos axiais no sólido.</label>
+</li>
+<li style="height: 25px;">
+  <input type="checkbox" />
   <label>O precedente com inclusão da entalpia de fusão no sólido.</label>
 </li>
 <li style="height: 25px;">
@@ -55,7 +59,6 @@ html"""
   <label>...</label>
 </li>
 </ol>
-
 """
 
 # ╔═╡ Cell order:
