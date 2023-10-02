@@ -276,6 +276,8 @@ md"""
 [JuMP](https://jump.dev/): uma linguagem de optimização matemática em Julia.
 
 [JuliaData](https://github.com/JuliaData): pacotes para *Data Science* em geral.
+
+[JuliaMolSim](https://juliamolsim.github.io/): simulação de dinâmica molecular em Julia.
 """
 
 # ╔═╡ Cell order:
