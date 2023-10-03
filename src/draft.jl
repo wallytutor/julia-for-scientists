@@ -91,6 +91,11 @@ u = copy(x)
 domain = HalfCellBoundaryFVM(; L = L, N = N)
 A, b = createproblem(N)
 
+# TODO: add ghost node equation to system cause it becomes more
+# readable and maintainable without much overhead!
+# x = ones(N+1)
+# c = copy(b)
+
 for t in 0.0:τ:tend
     b[1] = h * x∞
     b[2:end] = x[2:end]
