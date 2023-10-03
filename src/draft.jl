@@ -2,6 +2,7 @@
 using CairoMakie
 using LinearAlgebra
 using Printf
+using Trapz
 
 const R = 8.314_462_618_153_24
 
@@ -38,6 +39,10 @@ function masstomolefraction(w)
     return w * (w / 0.012 + (1 - w) / 0.055)^(-1) / 0.012
 end
 
+function moletomassfraction(x)
+    return 0.012 * x / (0.012*x + (1 - x) * 0.055)
+end
+
 function createproblem(N)
     A = Tridiagonal(zeros(N-1), zeros(N), zeros(N-1))
     b = zeros(N)
@@ -68,31 +73,35 @@ function updatematrix!(
     M.d[1]  = 1 + β * (h + γ)
     M.du[1] = β * γ
 
-    # b[:] = x
-    # b[1] += β * h * x∞
-
     return nothing
 end
 
-h = 1.0e-03
+h = 1.0e-01
 T = 1173.15
 
-x∞  = masstomolefraction(0.0100)
-x₁₀ = masstomolefraction(0.0016)
+# 16NCD13
+# yₑ = 0.0100
+# y₀ = 0.0016
+# 23MCD5
+yₑ = 0.0095
+y₀ = 0.0023
 
-N = 1000
+x∞  = masstomolefraction(yₑ)
+x₁₀ = masstomolefraction(y₀)
+
+N = 2000
 L = 0.0015
 
-M = 100
-tend = 10800.0
+M = 200
+tend = 7200.0
 τ = tend / M
 
 domain = HalfCellBoundaryFVM(; L = L, N = N)
 A, b = createproblem(N+1)
 
 maxiter = 100
-αᵣ = 0.99
-εᵣ = 1.0e-06
+αᵣ = 0.6
+εᵣ = 1.0e-12
 
 x = x₁₀ * ones(N+1)
 u = copy(x)
@@ -111,14 +120,12 @@ for (step, ts) in enumerate(0.0:τ:tend)
 
         updatematrix!(A, x, T, τ, domain.δ, h)
 
-        u[:] = A \ b
-        Δx = (1-αᵣ) * (u-x)
+        Δx = (1-αᵣ) * (A \ b - x)
         x[:] += Δx
 
-        residualglob[globaliter] = ε = maximum(abs.(Δx ./ x))
+        residualglob[globaliter] = ε = maximum(abs.(Δx))
 
         if ε <= εᵣ
-            # @info "[$(@sprintf("%.6e", ts))s] $(numiter) iterações ⟹ $(ε)"
             residualstep[step] = ε
             iterperstep[step] = numiter
             break
@@ -128,32 +135,39 @@ for (step, ts) in enumerate(0.0:τ:tend)
     end
 end
 
-@info "Máximo de iterações por passo $(maximum(iterperstep))"
-
 fig = let
+    z = domain.z
+    y = moletomassfraction.(x)
+    m = 1000 * 7890 * trapz(z, y.-y₀)
     fig = Figure(resolution = (720, 500))
     ax = Axis(fig[1, 1])
     ax.xlabel = "Posição [mm]"
-    ax.ylabel = "Fração molar"
-    lines!(ax, 1000domain.z, x)
+    ax.ylabel = "Porcentagem mássica [%]"
+    ax.title = "Ganho de massa $(@sprintf("%.1f", m)) g/m²"
+    ax.xticks = 0.0:0.3:1.5
+    ax.yticks = 0.0:0.2:1.0
+    xlims!(ax, (0.0, 1.5))
+    ylims!(ax, (0.0, 1.0))
+    lines!(ax, 1000z, 100y)
+    stairs!(ax, 1000z, 100y, color = :black, step = :center)
     fig
 end
 
 fig = let
-    r =  log10.(residualglob[residualglob .> 0.0])
-    # r =  log10.(residualstep[residualstep .> 0.0])
+    rg = log10.(residualglob[residualglob .> 0.0])
+    rs = log10.(residualstep[residualstep .> 0.0])
+    ig = 1:size(rg)[1]
+    is = cumsum(iterperstep)
     fig = Figure(resolution = (720, 500))
-    ax = Axis(fig[1, 1])
+    ax = Axis(fig[1, 1], yscale = identity)
     ax.xlabel = "Iteração global"
     ax.ylabel = "log10(Resíduo)"
-    lines!(ax, r)
+    ax.title = "Máximo de iterações $(maximum(iterperstep))"
+    ax.yticks = -13:2:-1
+    xlims!(ax, (0, convert(Int64, ceil(ig[end]/1000)*1000)))
+    ylims!(ax, (-13, -1))
+    lines!(ax, ig, rg, color = :black, linewidth = 0.5, label = "Interno")
+    lines!(ax, is, rs, color = :red,   linewidth = 3.0, label = "Externo")
+    axislegend(position = :rt)
     fig
 end
-
-# stairs!(ax, z, Tₙ, color = :black, linewidth = 1, label = "Numérica",
-# step = :center)
-# ax.xticks = 1:5:n
-# ax.yticks = range(-15, 5, 5)
-# xlims!(ax, (1, n))
-# ylims!(ax, (-15, 5))
-# axislegend(position = :rb)
