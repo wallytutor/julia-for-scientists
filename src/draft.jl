@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 using CairoMakie
+using LinearAlgebra
 using SparseArrays
 
 const R = 8.314_462_618_153_24
@@ -37,26 +38,79 @@ function masstomolefraction(w)
     return w * (w / 0.012 + (1 - w) / 0.055)^(-1) / 0.012
 end
 
+function createproblem(N)
+    A = Tridiagonal(zeros(N-1), zeros(N), zeros(N-1))
+    b = zeros(N)
+    return A, b
+end
 
+function updatematrix!(
+    M::Tridiagonal{Float64, Vector{Float64}},
+    x::Vector{Float64},
+    b::Vector{Float64},
+    T::Float64,
+    τ::Float64,
+    δ::Float64,
+    h::Float64,
+    x∞::Float64
+)::Nothing
+    D = map((x)->diffcoef₁(T, x), x)
+    d = harmonic(D)
 
+    β = τ / δ^2
+
+    M.dl[:] = -β * d
+    M.du[:] = -β * d
+
+    M.d[:] .= 1.0
+    M.d[1:end-1] -= M.du
+    M.d[2:end-0] -= M.dl
+
+    b[1] = h * x∞
+    b[2:end] = x[2:end]
+
+    M.d[1]  = d[1] / δ + h
+    M.du[1] = -d[1] / δ
+
+    return nothing
+end
+
+h = 1.0e-06
 T = 1173.15
+
+x∞  = masstomolefraction(0.0100)
 x₁₀ = masstomolefraction(0.0016)
 
 N = 10
 L = 0.0015
 
-τ = 1.0
+τ = 10.0
 tend = 10800.0
+
+x = x₁₀ * ones(N)
 
 domain = HalfCellBoundaryFVM(; L = L, N = N)
 
-x = x₁₀ * ones(N)
-D = map((x)->diffcoef₁(T, x), x)
-d = harmonic(D)
+A, b = createproblem(N)
 
-β = τ / domain.δ^2
-ae = β * d
-aw = β * d
-ap = @. 1.0 + ae + aw
 
-A = spdiagm(0 => ap, -1 => -ae, +1 => -aw)
+for t in 0.0:τ:tend
+    updatematrix!(A, x, b, T, τ, domain.δ, h, x∞)
+    x[:] = A\b
+end
+
+fig = Figure(resolution = (720, 500))
+
+ax = Axis(fig[1, 1])
+ax.xlabel = "Posição [mm]"
+ax.ylabel = "Fração molar"
+
+lines!(ax, domain.z, x)
+
+# stairs!(ax, z, Tₙ, color = :black, linewidth = 1, label = "Numérica",
+# step = :center)
+# ax.xticks = 1:5:n
+# ax.yticks = range(-15, 5, 5)
+# xlims!(ax, (1, n))
+# ylims!(ax, (-15, 5))
+# axislegend(position = :rb)
