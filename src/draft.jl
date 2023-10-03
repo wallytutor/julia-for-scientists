@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 using CairoMakie
 using LinearAlgebra
-using SparseArrays
+using Printf
 
 const R = 8.314_462_618_153_24
 
@@ -47,12 +47,10 @@ end
 function updatematrix!(
     M::Tridiagonal{Float64, Vector{Float64}},
     x::Vector{Float64},
-    b::Vector{Float64},
     T::Float64,
     τ::Float64,
     δ::Float64,
-    h::Float64,
-    x∞::Float64
+    h::Float64
 )::Nothing
     D = map((x)->diffcoef₁(T, x), x)
     d = harmonic(D)
@@ -66,12 +64,8 @@ function updatematrix!(
     M.d[1:end-1] -= M.du
     M.d[2:end-0] -= M.dl
 
-    b[1] = h * x∞
-    b[2:end] = x[2:end]
-
     M.d[1]  = d[1] / δ + h
     M.du[1] = -d[1] / δ
-
     return nothing
 end
 
@@ -81,31 +75,57 @@ T = 1173.15
 x∞  = masstomolefraction(0.0100)
 x₁₀ = masstomolefraction(0.0016)
 
-N = 10
+N = 1000
 L = 0.0015
 
-τ = 10.0
+τ = 100.0
 tend = 10800.0
 
+maxiter = 1000
+αᵣ = 0.8
+εᵣ = 1.0e-03
+
 x = x₁₀ * ones(N)
+u = copy(x)
 
 domain = HalfCellBoundaryFVM(; L = L, N = N)
-
 A, b = createproblem(N)
 
-
 for t in 0.0:τ:tend
-    updatematrix!(A, x, b, T, τ, domain.δ, h, x∞)
-    x[:] = A\b
+    b[1] = h * x∞
+    b[2:end] = x[2:end]
+
+    for i in 1:maxiter
+        updatematrix!(A, u, T, τ, domain.δ, h)
+
+        u[:] = A \ b
+        Δx = (1-αᵣ) * (u-x)
+        ε = maximum(abs.(Δx))
+        # @info "Inner $(ε)"
+
+        if t < τ
+            x[:] = u[:]
+            break
+        end
+
+        if ε <= εᵣ
+            x[:] = u[:]
+            @info "[$(@sprintf("%.6e", t))] Depois de $(i) iterações $(ε)"
+            break
+        end
+    end
 end
 
-fig = Figure(resolution = (720, 500))
+fig = let
+    fig = Figure(resolution = (720, 500))
 
-ax = Axis(fig[1, 1])
-ax.xlabel = "Posição [mm]"
-ax.ylabel = "Fração molar"
+    ax = Axis(fig[1, 1])
+    ax.xlabel = "Posição [mm]"
+    ax.ylabel = "Fração molar"
 
-lines!(ax, domain.z, x)
+    lines!(ax, domain.w, x)
+    fig
+end
 
 # stairs!(ax, z, Tₙ, color = :black, linewidth = 1, label = "Numérica",
 # step = :center)
