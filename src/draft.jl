@@ -24,9 +24,9 @@ struct HalfCellBoundaryFVM
 end
 
 function diffcoef₁(T::Float64, x₁::Float64)::Float64
-    Ax = 4.84e-05exp(-38.0x₁) / (1.0 - 5.0x₁)
-    Ex = 155_000.0 - 570_000.0x₁
-    return Ax * exp(- Ex / (R * T))
+    A = 4.84e-05exp(-38.0x₁) / (1.0 - 5.0x₁)
+    E = 155_000.0 - 570_000.0x₁
+    return A * exp(- E / (R * T))
 end
 
 function harmonic(k::Vector{Float64})::Vector{Float64}
@@ -45,31 +45,36 @@ function createproblem(N)
 end
 
 function updatematrix!(
-    M::Tridiagonal{Float64, Vector{Float64}},
-    x::Vector{Float64},
-    T::Float64,
-    τ::Float64,
-    δ::Float64,
-    h::Float64
-)::Nothing
+        M::Tridiagonal{Float64, Vector{Float64}},
+        x::Vector{Float64},
+        T::Float64,
+        τ::Float64,
+        δ::Float64,
+        h::Float64
+    )::Nothing
     D = map((x)->diffcoef₁(T, x), x)
     d = harmonic(D)
 
-    β = τ / δ^2
+    β = τ / δ
+    γ = d[1] / δ
 
-    M.dl[:] = -β * d
-    M.du[:] = -β * d
+    M.dl[:] = -(β / δ) * d
+    M.du[:] = -(β / δ) * d
 
     M.d[:] .= 1.0
     M.d[1:end-1] -= M.du
     M.d[2:end-0] -= M.dl
 
-    M.d[1]  = d[1] / δ + h
-    M.du[1] = -d[1] / δ
+    M.d[1]  = 1 + β * (h + γ)
+    M.du[1] = β * γ
+
+    # b[:] = x
+    # b[1] += β * h * x∞
+
     return nothing
 end
 
-h = 1.0e-06
+h = 1.0e-03
 T = 1173.15
 
 x∞  = masstomolefraction(0.0100)
@@ -78,57 +83,70 @@ x₁₀ = masstomolefraction(0.0016)
 N = 1000
 L = 0.0015
 
-τ = 100.0
+M = 100
 tend = 10800.0
-
-maxiter = 1000
-αᵣ = 0.8
-εᵣ = 1.0e-03
-
-x = x₁₀ * ones(N)
-u = copy(x)
+τ = tend / M
 
 domain = HalfCellBoundaryFVM(; L = L, N = N)
-A, b = createproblem(N)
+A, b = createproblem(N+1)
 
-# TODO: add ghost node equation to system cause it becomes more
-# readable and maintainable without much overhead!
-# x = ones(N+1)
-# c = copy(b)
+maxiter = 100
+αᵣ = 0.99
+εᵣ = 1.0e-06
 
-for t in 0.0:τ:tend
-    b[1] = h * x∞
-    b[2:end] = x[2:end]
+x = x₁₀ * ones(N+1)
+u = copy(x)
 
-    for i in 1:maxiter
-        updatematrix!(A, u, T, τ, domain.δ, h)
+iterperstep = -ones(Int64, M+1)
+residualstep = -ones(Float64, M+1)
+residualglob = -ones(Float64, (M+1)*maxiter)
+globaliter = 0
+
+for (step, ts) in enumerate(0.0:τ:tend)
+    b[:] = x[:]
+    b[1] += (τ / domain.δ) * h * x∞
+
+    for numiter in 1:maxiter
+        globaliter += 1
+
+        updatematrix!(A, x, T, τ, domain.δ, h)
 
         u[:] = A \ b
         Δx = (1-αᵣ) * (u-x)
-        ε = maximum(abs.(Δx))
-        # @info "Inner $(ε)"
+        x[:] += Δx
 
-        if t < τ
-            x[:] = u[:]
-            break
-        end
+        residualglob[globaliter] = ε = maximum(abs.(Δx ./ x))
 
         if ε <= εᵣ
-            x[:] = u[:]
-            @info "[$(@sprintf("%.6e", t))] Depois de $(i) iterações $(ε)"
+            # @info "[$(@sprintf("%.6e", ts))s] $(numiter) iterações ⟹ $(ε)"
+            residualstep[step] = ε
+            iterperstep[step] = numiter
             break
+        elseif numiter == maxiter
+            @warn "[$(@sprintf("%.6e", ts))s] $(numiter) iterações ⟹ $(ε)"
         end
     end
 end
 
+@info "Máximo de iterações por passo $(maximum(iterperstep))"
+
 fig = let
     fig = Figure(resolution = (720, 500))
-
     ax = Axis(fig[1, 1])
     ax.xlabel = "Posição [mm]"
     ax.ylabel = "Fração molar"
+    lines!(ax, 1000domain.z, x)
+    fig
+end
 
-    lines!(ax, domain.w, x)
+fig = let
+    r =  log10.(residualglob[residualglob .> 0.0])
+    # r =  log10.(residualstep[residualstep .> 0.0])
+    fig = Figure(resolution = (720, 500))
+    ax = Axis(fig[1, 1])
+    ax.xlabel = "Iteração global"
+    ax.ylabel = "log10(Resíduo)"
+    lines!(ax, r)
     fig
 end
 
