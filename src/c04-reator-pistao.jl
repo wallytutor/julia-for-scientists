@@ -12,6 +12,7 @@ begin
     Pkg.instantiate()
 
     using CairoMakie
+    using Interpolations
     using LsqFit
     using Polynomials
     using Printf
@@ -51,11 +52,35 @@ let
     end
 end
 
+# ╔═╡ 14dfac23-a63c-4715-9e39-105bd7c8c325
+let
+    P = 27.0
+    T = collect(300.0:10.0:2000.0)
+    h = map((t)->SpecificH(P, t), T)
+    h_interp = linear_interpolation(T, h)
+
+    fig = let
+        fig = Figure(resolution = (720, 500))
+        ax = Axis(fig[1, 1])
+        lines!(ax, T, h)
+        lines!(ax, T, h_interp(T))
+        ax.xlabel = "Temperatura [K]"
+        ax.ylabel = "Entalpia específica [kJ/kg]"
+        ax.xticks = 300:100:1200
+        ax.yticks = 000:500:4500
+        xlims!(ax, (300, 1200))
+        ylims!(ax, (000, 4500))
+        fig
+    end
+
+    fig
+end
+
 # ╔═╡ 012dc8b2-6286-445d-a5ca-1ac438df5bc4
 function modelh(T, a)
     t = @. T - 300.0
     l = @. a[1] + a[2] * t
-    z = @. t * cos(atan(a[2]))
+    z = @. t / cos(atan(a[2]))
     return @. l + a[5] * (1 - exp(-(z/a[3])^a[4]))
 end
 
@@ -96,10 +121,10 @@ function solveenthalpypfr(; mesh::AbstractDomainFVM, P::T, A::T, Tₛ::T, Tₚ::
                             α::Float64 = 0.4, ε::Float64 = 1.0e-10,
                             alg::Any = Order16(), vars...) where T
     N = length(mesh.z) - 1
-
+    
     Tm = Tₚ * ones(N + 1)
     hm = h.(Tm)
-
+    
     a = (ĥ * P * mesh.δ) / (ρ * u * A)
     K = 2spdiagm(-1 => -ones(N-1), 0 => ones(N))
 
@@ -120,7 +145,7 @@ function solveenthalpypfr(; mesh::AbstractDomainFVM, P::T, A::T, Tₛ::T, Tₚ::
         catch
             continue
         end
-
+        
         residual[niter] = maximum(abs.(Δ))
 
         if (residual[niter] <= ε)
@@ -135,7 +160,7 @@ end
 # ╔═╡ f2f7bae5-3bcc-426b-9c29-2d4b96abbf74
 let
     L = 5.0
-    mesh = ImmersedConditionsFVM(; L = L, N = 200)
+    mesh = ImmersedConditionsFVM(; L = L, N = 2000)
 
     D = 0.0254 / 2
     P = π * D
@@ -144,18 +169,24 @@ let
     Tₛ = 873.15
     ṁ = 60.0 / 3600.0
 
-    Pₚ = 0.1 * 270.0
+    Pₚ = 27.0
     Tₚ = 300.0
     ρₚ = 1.0 / SpecificV(Pₚ, Tₚ)
     uₚ = ṁ / (ρₚ * A)
 
+    h_interp = let
+        T = collect(300.0:10.0:2000.0)
+        h = map((t)->SpecificH(Pₚ, t), T)
+        linear_interpolation(T, h)
+    end
     z = mesh.z
     ĥ = 4000.0
 
     # TODO search literature for supercritical!
     # ĥ = computehtc(; reactor..., fluid..., u = operations.u)
 
-    h(t) = 1000p.(t)
+    h(t) = 1000h_interp(t)
+    
     # function h(t)
     #     1000 * try
     #         SpecificH(Pₚ, t)
@@ -182,7 +213,7 @@ let
 
     T, residuals = solveenthalpypfr(; pars...)
 
-    println(residuals)
+    println(residuals[residuals .> 0])
     fig1 = let
         yrng = (300.0, 400.0)
         Tend = @sprintf("%.2f", T[end]-273.15)
@@ -251,12 +282,12 @@ md"""
 # ╔═╡ Cell order:
 # ╠═db0cf709-c127-42e0-9e3d-6e988a1e659d
 # ╟─451f21a0-22ae-452f-937c-01f6617209ea
+# ╠═14dfac23-a63c-4715-9e39-105bd7c8c325
 # ╠═012dc8b2-6286-445d-a5ca-1ac438df5bc4
-# ╟─c6449b68-c542-4a8d-b34a-99be9dfed38a
-# ╠═3803833c-4340-4e9d-af33-dcefa01d835a
+# ╠═c6449b68-c542-4a8d-b34a-99be9dfed38a
+# ╟─3803833c-4340-4e9d-af33-dcefa01d835a
 # ╠═763992dd-0ab7-422e-8983-a398725326e7
 # ╠═f2f7bae5-3bcc-426b-9c29-2d4b96abbf74
 # ╠═2eadbe40-32a3-4d7c-9b3c-324be6bf8f29
 # ╟─daab21e0-e9f8-4b75-b335-785553a0e064
 # ╠═dc471220-61ee-11ee-0281-f991a063e50c
-# ╠═2a144465-21e6-4bcc-8c09-2a41d6ed79f2
