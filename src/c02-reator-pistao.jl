@@ -16,7 +16,7 @@ begin
     using Roots
     using SparseArrays: spdiagm
     import PlutoUI
-    
+
     include("util-reator-pistao.jl")
     toc = PlutoUI.TableOfContents(title = "Tópicos")
 end
@@ -136,49 +136,66 @@ A solução integrando esses passos foi implementada em `solventhalpypfr`.
 
 # ╔═╡ 548a5654-47bf-42d4-bfb6-38e1c2860c32
 "Integra reator pistão circular no espaço das entalpias."
-function solveenthalpypfr(; mesh::AbstractDomainFVM, P::T, A::T, Tₛ::T, Tₚ::T,
-                            ĥ::T, u::T, ρ::T, h::Function, M::Int64 = 100,
-                            α::Float64 = 0.4, ε::Float64 = 1.0e-10,
-							vars...) where T
-	N = length(mesh.z) - 1
-	Tm = Tₚ * ones(N + 1)
+function solveenthalpypfr(; mesh::AbstractDomainFVM, P::T, A::T,
+                            Tₛ::T, Tₚ::T, ĥ::T, u::T, ρ::T, h::Function,
+                            M::Int64 = 100, α::Float64 = 0.4, ε::Float64 = 1.0e-10,
+                            relax::Symbol = :h, vars...) where T
+    @info "Resolvendo o problema com relaxação de $(relax)"
 
-	a = (ĥ * P * mesh.δ) / (ρ * u * A)
-	K = 2spdiagm(-1 => -ones(N-1), 0 => ones(N))
+    N = length(mesh.z) - 1
+    Tm = Tₚ * ones(N + 1)
+    hm = h.(Tm)
 
-	b = (2a * Tₛ) * ones(N)
-	b[1] += 2h(Tₚ)
+    a = (ĥ * P * mesh.δ) / (ρ * u * A)
+    K = 2spdiagm(-1 => -ones(N-1), 0 => ones(N))
 
-	# Aloca e inicia em negativo o vetor de residuos. Isso
-	# é interessante para o gráfico aonde podemos eliminar
-	# os elementos negativos que não tem sentido físico.
-	residual = -ones(M)
+    b = (2a * Tₛ) * ones(N)
+    b[1] += 2h(Tₚ)
 
-	@time for niter in 1:M
-		# Calcula o vetor `b` do lado direito e resolve o sistema.
-		h̄ = K \ (b - a * (Tm[1:end-1] + Tm[2:end]))
+    # Aloca e inicia em negativo o vetor de residuos. Isso
+    # é interessante para o gráfico aonde podemos eliminar
+    # os elementos negativos que não tem sentido físico.
+    residual = -ones(M)
 
-		# Encontra as novas temperaturas resolvendo uma equação não-linear
-		# para cada nova entalpia calculada resolvendo `A*h=b`.
-		U = map((Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ), Tm[2:end], h̄)
+    @time for niter in 1:M
+        # Calcula o vetor `b` do lado direito e resolve o sistema.
+        h̄ = K \ (b - a * (Tm[1:end-1] + Tm[2:end]))
 
-		# Incremento da solução.
-		Δ = (1-α) * (U - Tm[2:end])
+        # Relaxa solução para gerir não linearidades.
+        if relax == :h
+            Δ = (1-α) * (h̄ - hm[2:end])
+            m = maximum(hm)
 
-		# Relaxa solução para evitar divergência.
-		Tm[2:end] += Δ
+            hm[2:end] += Δ
 
-		# Verica progresso da solução.
-		residual[niter] = maximum(abs.(Δ))
+            # Solução das temperaturas compatíveis com hm.
+            Tm[2:end] = map(
+                (Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ),
+                Tm[2:end], hm[2:end]
+            )
+        else
+            # Solução das temperaturas compatíveis com h̄.
+            Um = map(
+                (Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ),
+                Tm[2:end], h̄
+            )
 
-		# Verifica status da convergência.
-		if (residual[niter] <= ε)
-			@info("Convergiu após $(niter) iterações")
-			break
-		end
-	end
+            Δ = (1-α) * (Um - Tm[2:end])
+            m = maximum(Tm)
 
-	return Tm, residual
+            Tm[2:end] += Δ
+        end
+
+        # Verifica status da convergência.
+        residual[niter] = maximum(abs.(Δ/m))
+
+        if (residual[niter] <= ε)
+            @info("Convergiu após $(niter) iterações")
+            break
+        end
+    end
+
+    return Tm, residual
 end
 
 # ╔═╡ bd79aef3-2634-48b2-b06c-2f0185ebc3ac
@@ -189,6 +206,11 @@ Usamos agora essa função para uma última simulação do mesmo problema. Para 
 # ╔═╡ 2ff750d6-8680-44cd-a873-bc6f9ac9a383
 md"""
 Verificamos abaixo que a solução levou um certo número de iterações para convergir. Para concluir vamos averiguar a qualidade da convergência ao longo das iterações.
+"""
+
+# ╔═╡ 14a9f7a5-c127-4ac5-8fb9-e94dc4f8462d
+md"""
+Introduzimos também a possibilidade de se utilizar a relaxação diretamente na entalpia, resolvendo o problema não linear apenas para encontrar diretamente a nova estimação do campo de temperaturas. A figura que segue ilustas o comportamento de convergência. Neste caso específico a relaxação em entalpia não apresenta vantagens, mas veremos em outras ocasiões que esta é a maneira mais simples de se fazer convergir uma simulação.
 """
 
 # ╔═╡ 5c97795c-fc24-409b-ac15-7fafebf6153b
@@ -233,51 +255,52 @@ end
 # ╔═╡ 29f8a7e8-8570-43b6-a1e4-48f42f6b1e5a
 fig1, fig2 = let
     mesh = ImmersedConditionsFVM(; L = reactor.L, N = 10000)
-    
+
     z = mesh.z
     ĥ = computehtc(; reactor..., fluid..., u = operations.u)
 
-	h = (T) -> fluid.cₚ * T + 1000
-	
+    h = (T) -> fluid.cₚ * T + 1000
+
     pars = (z = z, ĥ = ĥ, P = P, A = A, ρ = fluid.ρ, cₚ = fluid.cₚ, operations...)
+    solver = (relax = :T, ε = 1.0e-10)
 
     Tₐ = analyticalthermalpfr(; pars...)
-	Tₙ, residuals = solveenthalpypfr(; mesh = mesh, h = h, pars...)
-	
-	fig1 = let
-		yrng = (300.0, 400.0)
-		Tend = @sprintf("%.2f", Tₐ[end])
-		fig = Figure(resolution = (720, 500))
-		ax = Axis(fig[1, 1])
-		lines!(ax, z, Tₐ, color = :red,    linewidth = 4, label = "Analítica")
-		stairs!(ax, z, Tₙ, color = :black, linewidth = 1, label = "Numérica",
-			    step = :center)
-		xlims!(ax, (0, reactor.L))
-		ax.title = "Temperatura final = $(Tend) K"
-		ax.xlabel = "Posição [m]"
-		ax.ylabel = "Temperatura [K]"
-		ax.xticks = range(0.0, reactor.L, 6)
-		ax.yticks = range(yrng..., 6)
-		ylims!(ax, yrng)
-		axislegend(position = :rb)
-		fig
-	end
+    Tₙ, residuals = solveenthalpypfr(; mesh = mesh, h = h, pars..., solver...)
 
-	fig2 = let
-	    r = residuals[residuals .> 0]
-	    n = length(r)
-	
-	    fig = Figure(resolution = (720, 500))
-	    ax = Axis(fig[1, 1], ylabel = "log10(r)", xlabel = "Iteração")
-	    lines!(ax, log10.(r))
-	    ax.xticks = 1:5:n
-	    ax.yticks = range(-15, 5, 5)
-	    xlims!(ax, (1, n))
-	    ylims!(ax, (-15, 5))
-	    fig
-	end
+    fig1 = let
+        yrng = (300.0, 400.0)
+        Tend = @sprintf("%.2f", Tₐ[end])
+        fig = Figure(resolution = (720, 500))
+        ax = Axis(fig[1, 1])
+        lines!(ax, z, Tₐ, color = :red,    linewidth = 4, label = "Analítica")
+        stairs!(ax, z, Tₙ, color = :black, linewidth = 1, label = "Numérica",
+                step = :center)
+        xlims!(ax, (0, reactor.L))
+        ax.title = "Temperatura final = $(Tend) K"
+        ax.xlabel = "Posição [m]"
+        ax.ylabel = "Temperatura [K]"
+        ax.xticks = range(0.0, reactor.L, 6)
+        ax.yticks = range(yrng..., 6)
+        ylims!(ax, yrng)
+        axislegend(position = :rb)
+        fig
+    end
 
-	fig1, fig2
+    fig2 = let
+        r = residuals[residuals .> 0]
+        n = ceil(length(r)/5)*5
+
+        fig = Figure(resolution = (720, 500))
+        ax = Axis(fig[1, 1], ylabel = "log10(r)", xlabel = "Iteração")
+        lines!(ax, log10.(r))
+        ax.xticks = 0:5:n
+        ax.yticks = range(-12, 0, 7)
+        xlims!(ax, (0, n))
+        ylims!(ax, (-12, 0))
+        fig
+    end
+
+    fig1, fig2
 end;
 
 # ╔═╡ 93cdcc24-60aa-4c6c-87aa-1f941c7a33f5
@@ -285,6 +308,60 @@ fig1
 
 # ╔═╡ c4b7cfe3-37a8-4619-b8c9-3d506f74468b
 fig2
+
+# ╔═╡ 383998d7-2edf-4748-a58d-1fbfec86bb97
+fig3, fig4 = let
+    mesh = ImmersedConditionsFVM(; L = reactor.L, N = 10000)
+
+    z = mesh.z
+    ĥ = computehtc(; reactor..., fluid..., u = operations.u)
+
+    h = (T) -> fluid.cₚ * T + 1000
+
+    pars = (z = z, ĥ = ĥ, P = P, A = A, ρ = fluid.ρ, cₚ = fluid.cₚ, operations...)
+    solver = (relax = :h, ε = 1.0e-10)
+
+    Tₐ = analyticalthermalpfr(; pars...)
+    Tₙ, residuals = solveenthalpypfr(; mesh = mesh, h = h, pars..., solver...)
+
+    fig1 = let
+        yrng = (300.0, 400.0)
+        Tend = @sprintf("%.2f", Tₐ[end])
+        fig = Figure(resolution = (720, 500))
+        ax = Axis(fig[1, 1])
+        lines!(ax, z, Tₐ, color = :red,    linewidth = 4, label = "Analítica")
+        stairs!(ax, z, Tₙ, color = :black, linewidth = 1, label = "Numérica",
+                step = :center)
+        xlims!(ax, (0, reactor.L))
+        ax.title = "Temperatura final = $(Tend) K"
+        ax.xlabel = "Posição [m]"
+        ax.ylabel = "Temperatura [K]"
+        ax.xticks = range(0.0, reactor.L, 6)
+        ax.yticks = range(yrng..., 6)
+        ylims!(ax, yrng)
+        axislegend(position = :rb)
+        fig
+    end
+
+    fig2 = let
+        r = residuals[residuals .> 0]
+        n = ceil(length(r)/5)*5
+
+        fig = Figure(resolution = (720, 500))
+        ax = Axis(fig[1, 1], ylabel = "log10(r)", xlabel = "Iteração")
+        lines!(ax, log10.(r))
+        ax.xticks = 0:5:n
+        ax.yticks = range(-12, 0, 7)
+        xlims!(ax, (0, n))
+        ylims!(ax, (-12, 0))
+        fig
+    end
+
+    fig1, fig2
+end;
+
+# ╔═╡ ef9aa780-07c1-490c-8056-286e97927867
+fig4
 
 # ╔═╡ 7158a6ea-48ec-4b19-81db-1317198cc980
 md"""
@@ -301,6 +378,9 @@ md"""
 # ╟─93cdcc24-60aa-4c6c-87aa-1f941c7a33f5
 # ╟─2ff750d6-8680-44cd-a873-bc6f9ac9a383
 # ╟─c4b7cfe3-37a8-4619-b8c9-3d506f74468b
+# ╟─14a9f7a5-c127-4ac5-8fb9-e94dc4f8462d
+# ╟─383998d7-2edf-4748-a58d-1fbfec86bb97
+# ╟─ef9aa780-07c1-490c-8056-286e97927867
 # ╟─5c97795c-fc24-409b-ac15-7fafebf6153b
 # ╟─b272c7d6-1697-4805-bcb4-73ca02de4b1c
 # ╟─7b150e7e-564b-49cf-b4e2-f753a8526d80
