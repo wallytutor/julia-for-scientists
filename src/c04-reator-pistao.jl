@@ -95,14 +95,10 @@ function solveenthalpypfr(; mesh::AbstractDomainFVM, P::T, A::T, Tₛ::T, Tₚ::
         Δ = (1-α) * (K\(b - a * (Tm[1:end-1] + Tm[2:end])) - hm[2:end])
         hm[2:end] += Δ
 
-		try
-	        Tm[2:end] = map(
-				(Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ, alg, atol=0.1),
-				Tm[2:end], hm[2:end]
-			)
-		catch
-			continue
-		end
+		Tm[2:end] = map(
+			(Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ, alg, atol=0.1),
+			Tm[2:end], hm[2:end]
+		)
 		
         residual[niter] = maximum(abs.(Δ))
 
@@ -165,20 +161,20 @@ let
     T, residuals = solveenthalpypfr(; pars...)
 
     fig1 = let
-        yrng = (0.0, 600.0)
+        yrng = (300.0, 900.0)
 		
-        Tend = @sprintf("%.2f", T[end]-273.15)
+        Tend = @sprintf("%.2f", T[end])
         fig = Figure(resolution = (720, 500))
         ax = Axis(fig[1, 1])
-        stairs!(ax, z, T.-273.15,
+        stairs!(ax, z, T,
 				color = :red, linewidth = 2,
                 label = "Numérica", step = :center)
         xlims!(ax, (0, L))
-        ax.title = "Temperatura final = $(Tend) °C"
+        ax.title = "Temperatura final = $(Tend) K"
         ax.xlabel = "Posição [m]"
-        ax.ylabel = "Temperatura [°C]"
-        ax.xticks = range(0.0, L, 6)
-        ax.yticks = range(yrng..., 6)
+        ax.ylabel = "Temperatura [K]"
+        ax.xticks = range(0.0, L, 5)
+        ax.yticks = range(yrng..., 7)
         ylims!(ax, yrng)
         axislegend(position = :rb)
         fig
@@ -194,7 +190,7 @@ md"""
 # ╟─db0cf709-c127-42e0-9e3d-6e988a1e659d
 # ╟─451f21a0-22ae-452f-937c-01f6617209ea
 # ╟─14dfac23-a63c-4715-9e39-105bd7c8c325
-# ╟─763992dd-0ab7-422e-8983-a398725326e7
-# ╟─f2f7bae5-3bcc-426b-9c29-2d4b96abbf74
+# ╠═763992dd-0ab7-422e-8983-a398725326e7
+# ╠═f2f7bae5-3bcc-426b-9c29-2d4b96abbf74
 # ╟─daab21e0-e9f8-4b75-b335-785553a0e064
-# ╠═dc471220-61ee-11ee-0281-f991a063e50c
+# ╟─dc471220-61ee-11ee-0281-f991a063e50c
