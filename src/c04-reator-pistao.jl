@@ -12,7 +12,7 @@ begin
     Pkg.instantiate()
 
     using CairoMakie
-	using Interpolations
+    using Interpolations
     using Printf
     using Roots
     using SparseArrays: spdiagm
@@ -55,7 +55,7 @@ let
     P = 27.0
     T = collect(300.0:5.0:2000.0)
     h = map((t)->SpecificH(P, t), T)
-	h_interp = linear_interpolation(T, h)
+    h_interp = linear_interpolation(T, h)
 
     let
         fig = Figure(resolution = (720, 500))
@@ -79,10 +79,10 @@ function solveenthalpypfr(; mesh::AbstractDomainFVM, P::T, A::T, Tₛ::T, Tₚ::
                             α::Float64 = 0.4, ε::Float64 = 1.0e-10,
                             alg::Any = Order16(), vars...) where T
     N = length(mesh.z) - 1
-    
-	Tm = Tₚ * ones(N + 1)
-	hm = h.(Tm)
-	
+
+    Tm = Tₚ * ones(N + 1)
+    hm = h.(Tm)
+
     a = (ĥ * P * mesh.δ) / (ρ * u * A)
     K = 2spdiagm(-1 => -ones(N-1), 0 => ones(N))
 
@@ -95,11 +95,11 @@ function solveenthalpypfr(; mesh::AbstractDomainFVM, P::T, A::T, Tₛ::T, Tₚ::
         Δ = (1-α) * (K\(b - a * (Tm[1:end-1] + Tm[2:end])) - hm[2:end])
         hm[2:end] += Δ
 
-		Tm[2:end] = map(
-			(Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ, alg, atol=0.1),
-			Tm[2:end], hm[2:end]
-		)
-		
+        Tm[2:end] = map(
+            (Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ, alg, atol=0.1),
+            Tm[2:end], hm[2:end]
+        )
+
         residual[niter] = maximum(abs.(Δ))
 
         if (residual[niter] <= ε)
@@ -128,19 +128,19 @@ let
     ρₚ = 1.0 / SpecificV(Pₚ, Tₚ)
     uₚ = ṁ / (ρₚ * A)
 
-	h_interp = let
-	    T = collect(300.0:5.0:2000.0)
-	    h = map((t)->SpecificH(Pₚ, t), T)
-		linear_interpolation(T, h)
-	end
-	
+    h_interp = let
+        T = collect(300.0:5.0:2000.0)
+        h = map((t)->SpecificH(Pₚ, t), T)
+        linear_interpolation(T, h)
+    end
+
     z = mesh.z
     ĥ = 4000.0
 
     # TODO search literature for supercritical!
     # ĥ = computehtc(; reactor..., fluid..., u = operations.u)
 
-	h(t) = 1000h_interp(t)
+    h(t) = 1000h_interp(t)
 
     pars = (
         mesh = mesh,
@@ -162,12 +162,12 @@ let
 
     fig1 = let
         yrng = (300.0, 900.0)
-		
+
         Tend = @sprintf("%.2f", T[end])
         fig = Figure(resolution = (720, 500))
         ax = Axis(fig[1, 1])
         stairs!(ax, z, T,
-				color = :red, linewidth = 2,
+                color = :red, linewidth = 2,
                 label = "Numérica", step = :center)
         xlims!(ax, (0, L))
         ax.title = "Temperatura final = $(Tend) K"
@@ -190,7 +190,7 @@ md"""
 # ╟─db0cf709-c127-42e0-9e3d-6e988a1e659d
 # ╟─451f21a0-22ae-452f-937c-01f6617209ea
 # ╟─14dfac23-a63c-4715-9e39-105bd7c8c325
-# ╠═763992dd-0ab7-422e-8983-a398725326e7
-# ╠═f2f7bae5-3bcc-426b-9c29-2d4b96abbf74
+# ╟─763992dd-0ab7-422e-8983-a398725326e7
+# ╟─f2f7bae5-3bcc-426b-9c29-2d4b96abbf74
 # ╟─daab21e0-e9f8-4b75-b335-785553a0e064
 # ╟─dc471220-61ee-11ee-0281-f991a063e50c
