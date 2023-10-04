@@ -3,6 +3,8 @@ using DocStringExtensions
 using Polynomials
 using SparseArrays: SparseMatrixCSC
 
+include("util-residuos.jl")
+
 "Constante dos gases ideais [J/(mol.K)]."
 const GAS_CONSTANT = 8.314_462_618_153_24
 
@@ -130,40 +132,6 @@ struct CounterFlowPFRModel
     that::IncompressibleEnthalpyPFRModel
 end
 
-"Gestor de resíduos durante uma simulação."
-mutable struct ResidualsRaw
-    inner::Int64
-    outer::Int64
-    counter::Int64
-    innersteps::Vector{Int64}
-    residuals::Vector{Float64}
-    function ResidualsRaw(inner::Int64, outer::Int64)
-        innersteps = -ones(Int64, outer)
-        residuals = -ones(Float64, outer * inner)
-        return new(inner, outer, 0, innersteps, residuals)
-    end
-end
-
-"Resíduos de uma simulação processados."
-struct ResidualsProcessed
-    counter::Int64
-    innersteps::Vector{Int64}
-    residuals::Vector{Float64}
-    finalsteps::Vector{Int64}
-    finalresiduals::Vector{Float64}
-
-    function ResidualsProcessed(r::ResidualsRaw)
-        innersteps = r.innersteps[r.innersteps .> 0.0]
-        residuals = r.residuals[r.residuals .> 0.0]
-
-        finalsteps = cumsum(innersteps)
-        finalresiduals = residuals[finalsteps]
-
-        return new(r.counter, innersteps, residuals,
-                   finalsteps, finalresiduals)
-    end
-end
-
 "Macro para capturar erro dada uma condição invalida."
 macro warnonly(ex)
     quote
@@ -235,13 +203,6 @@ function dittusboelter_Nu(Re, Pr, L, D; what = :heating)
 
     n = (what == :heating) ? 0.4 : 0.4
     return 0.023 * Re^(4 / 5) * Pr^n
-end
-
-"Alimenta resíduos da simulação no laço interno."
-function feedinnerresidual(r::ResidualsRaw, ε::Float64)
-    # TODO: add resizing test here!
-    r.counter += 1
-    r.residuals[r.counter] = ε
 end
 
 "Cria o par inverso de reatores em contra-fluxo."
