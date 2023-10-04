@@ -124,6 +124,12 @@ struct IncompressibleEnthalpyPFRModel <: AbstractPFRModel
     end
 end
 
+"Representa um par de reatores em contrafluxo."
+struct CounterFlowPFRModel
+    this::IncompressibleEnthalpyPFRModel
+    that::IncompressibleEnthalpyPFRModel
+end
+
 "Macro para capturar erro dada uma condição invalida."
 macro warnonly(ex)
     quote
@@ -169,8 +175,8 @@ end
 "Equação de Gnielinski para número de Nusselt."
 function gnielinski_Nu(Re, Pr)
     function validate(Re, Pr)
-        @assert 3000.0 <= Re <= 5.0e+06
-        @assert 0.5 <= Pr <= 2000.0
+        @assert 3000.0 <= Re <= 5.0e+06 "Re=$(Re) ∉ [3.0e+03, 5.0e+06]"
+        @assert 0.5 <= Pr <= 2000.0     "Pr=$(Pr) ∉ [5.0e-01, 2.0e+03]"
     end
 
     @warnonly validate(Re, Pr)
@@ -186,15 +192,97 @@ end
 "Equação de Dittus-Boelter para número de Nusselt."
 function dittusboelter_Nu(Re, Pr, L, D; what = :heating)
     function validate(Re, Pr, L, D)
-        @assert 10000.0 <= Re
-        @assert 0.6 <= Pr <= 160.0
-        @assert 10.0 <= L / D
+        @assert 10000.0 <= Re       "Re=$(Re) ∉ [0.0e+00, 1.0e+04]"
+        @assert 0.6 <= Pr <= 160.0  "Pr=$(Pr) ∉ [6.0e-01, 1.6e+02]"
+        @assert 10.0 <= L / D       "L/D=$(L/D) < 10.0"
     end
 
     @warnonly validate(Re, Pr, L, D)
 
     n = (what == :heating) ? 0.4 : 0.4
     return 0.023 * Re^(4 / 5) * Pr^n
+end
+
+"Cria o par inverso de reatores em contra-fluxo."
+function swap(cf::CounterFlowPFRModel)
+    return CounterFlowPFRModel(cf.that, cf.this)
+end
+
+"Acesso as coordenadas espaciais do reator."
+function coordinates(cf::CounterFlowPFRModel)
+    return cf.this.mesh.z
+end
+
+"Acesso ao perfil de temperatura do primeiro reator em um par."
+function thistemperature(cf::CounterFlowPFRModel)
+    return cf.this.fvdata.x |> identity
+end
+
+"Acesso ao perfil de temperatura do segundo reator em um par."
+function thattemperature(cf::CounterFlowPFRModel)
+    return cf.that.fvdata.x |> reverse
+end
+
+"Perfil de temperatura na parede entre dois fluidos respeitando fluxo."
+function surfacetemperature(cf::CounterFlowPFRModel)
+    T1 = thistemperature(cf)
+    T2 = thattemperature(cf)
+
+    ĥ1 = cf.this.ĥ
+    ĥ2 = cf.that.ĥ
+
+    Tw1 = 0.5 * (T1[1:end-1] + T1[2:end])
+    Tw2 = 0.5 * (T2[1:end-1] + T2[2:end])
+
+    return (ĥ1 * Tw1 + ĥ2 * Tw2) / (ĥ1 + ĥ2)
+end
+
+"Conservação de entalpia entre dois reatores em contra-corrente."
+function enthalpyresidual(cf::CounterFlowPFRModel)
+    function enthalpyrate(r)
+        T₁, T₀ = r.fvdata.x[[1, end]]
+        return r.ṁ * (r.enthalpy(T₁) - r.enthalpy(T₀))
+    end
+
+    Δha = enthalpyrate(cf.this)
+    Δhb = enthalpyrate(cf.that)
+    return abs(Δhb + Δha) / abs(Δha)
+end
+
+"Produz função para inverter solução em entalpia."
+function getrootfinder(h::Function)::Function
+    return (Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ)
+end
+
+"Método de relaxação baseado na entalpia."
+function relaxenthalpy!(Tm, hm, h̄, α, f)
+    # Calcula erro e atualização antes!
+    Δ = (1-α) * (h̄ - hm[2:end])
+    ε = maximum(abs.(Δ)) / abs(maximum(hm))
+
+    # Autaliza solução antes de resolver NLP.
+    hm[2:end] += Δ
+
+    # Solução das temperaturas compatíveis com hm.
+    Tm[2:end] = map(f, Tm[2:end], hm[2:end])
+
+    return ε
+end
+
+"Método de relaxação baseado na temperatura."
+function relaxtemperature!(Tm, hm, h̄, α, f)
+    # XXX: manter hm na interface para compabilidade com relaxenthalpy!
+    # Solução das temperaturas compatíveis com h̄.
+    Um = map(f, Tm[2:end], h̄)
+
+    # Calcula erro e atualização depois!
+    Δ = (1-α) * (Um - Tm[2:end])
+    ε = maximum(abs.(Δ)) / abs(maximum(Tm))
+
+    # Autaliza solução com resultado do NLP.
+    Tm[2:end] += Δ
+
+    return ε
 end
 
 "Dados usados nos notebooks da série."
@@ -252,8 +340,8 @@ const notedata = (
             Tₚ = 400.0,  # Temperatura de entrada do fluido [K]
         ),
         operations3 = (
-            u = 3.0,      # Velocidade do fluido [m/s]
-            Tₚ = 2000.0,  # Temperatura de entrada do fluido [K]
+            u = 2.5,      # Velocidade do fluido [m/s]
+            Tₚ = 380.0,   # Temperatura de entrada do fluido [K]
         )
     ),
 )
