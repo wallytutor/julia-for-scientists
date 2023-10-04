@@ -32,6 +32,10 @@ html"""
 </li>
 <li style="height: 25px;">
   <input type="checkbox" />
+  <label>O precedente com coeficiente HTC dependente da posição.</label>
+</li>
+<li style="height: 25px;">
+  <input type="checkbox" />
   <label>O precedente com trocas térmicas com o ambiente externo.</label>
 </li>
 <li style="height: 25px;">
@@ -53,6 +57,10 @@ html"""
 <li style="height: 25px;">
   <input type="checkbox" />
   <label>O precedente com inclusão de cinética química no gás.</label>
+</li>
+<li style="height: 25px;">
+  <input type="checkbox" />
+  <label>Suporte à fluidos supercríticos (água, dióxido de carbono).</label>
 </li>
 <li style="height: 25px;">
   <input type="checkbox" />
