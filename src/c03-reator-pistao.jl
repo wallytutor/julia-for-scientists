@@ -65,7 +65,7 @@ const operations2 = notedata.c03.operations2
 
 # ╔═╡ 04cf5b92-d10b-43f5-8fc5-1e549105ef9d
 md"""
-## Casos exemplo
+## Dados para simulação
 
 O par escolhido para exemplificar o comportamento de contra-corrente dos reatores
 pistão tem por característica de que cada reator ocupa a metade de um cilindro de diâmetro `D` = $(reactor.D) m de forma que o perímetro de troca é igual o diâmetro e a área transversal a metade daquela do cilindro. A temperatura inicial do fluido no reator (1) que escoa da esquerda para a direita é de $(operations1.Tₚ) K e naquele em contra-corrente (2) é de $(operations2.Tₚ) K.
@@ -75,6 +75,11 @@ O fluido do reator (2) tem um calor específico que é o triplo daquele do reato
 
 # ╔═╡ eecf85b0-180c-49c5-83ab-619ba6683960
 const operations3 = notedata.c03.operations3
+
+# ╔═╡ 7a278913-bf0f-4532-9c9b-f42aded9b6e9
+md"""
+## Estudo de caso I
+"""
 
 # ╔═╡ 9a529019-9cfc-4018-a7ce-051e6dbdd85e
 "Cria um par padronizado de reatores para simulação exemplo."
@@ -108,6 +113,11 @@ function createprfpair1(; N = 10)
 
     return r₁ , r₂
 end
+
+# ╔═╡ f3b7d46f-0fcc-4f68-9822-f83e977b87ee
+md"""
+## Estudo de caso II
+"""
 
 # ╔═╡ 7afff466-5463-431f-b817-083fe6102a8c
 "Cria um par padronizado de reatores para simulação exemplo."
@@ -171,16 +181,6 @@ function createprfpair2(; N = 10)
     return r₁ , r₃
 end
 
-# ╔═╡ 7a278913-bf0f-4532-9c9b-f42aded9b6e9
-md"""
-## Estudo de caso I
-"""
-
-# ╔═╡ f3b7d46f-0fcc-4f68-9822-f83e977b87ee
-md"""
-## Estudo de caso II
-"""
-
 # ╔═╡ 975744de-7ab0-4bfa-abe5-3741ec7ec1cf
 md"""
 ## Anexos
@@ -240,37 +240,70 @@ begin
         return (Tₖ, hₖ) -> find_zero(t -> h(t) - hₖ, Tₖ)
     end
 
-    function updatetemperature(A, b, a, T, S, f, h, α)
-        b[1:end] = a * (2S - T[1:end-1] - T[2:end])
-        b[1] += 2h(T[1])
-        Tm = map(f, T[2:end], A\b)
-        ΔT = (1-α) * (Tm - T[2:end])
-        εm = maximum(abs.(ΔT))
-        T[2:end] += ΔT
-        return εm
+    function relaxenthalpy!(Tm, hm, h̄, α, f)
+        # Calcula erro e atualização antes!
+        Δ = (1-α) * (h̄ - hm[2:end])
+        ε = maximum(abs.(Δ)) / abs(maximum(hm))
+
+        # Autaliza solução antes de resolver NLP.
+        hm[2:end] += Δ
+
+        # Solução das temperaturas compatíveis com hm.
+        Tm[2:end] = map(f, Tm[2:end], hm[2:end])
+
+        return ε
+    end
+
+    function relaxtemperature!(Tm, hm, h̄, α, f)
+        # Solução das temperaturas compatíveis com h̄.
+        Um = map(f, Tm[2:end], h̄)
+
+        # Calcula erro e atualização depois!
+        Δ = (1-α) * (Um - Tm[2:end])
+        ε = maximum(abs.(Δ)) / abs(maximum(Tm))
+
+        # Autaliza solução com resultado do NLP.
+        Tm[2:end] += Δ
+
+        return ε
     end
 
     function innerloop(;
         cf::CounterFlowPFRModel,
         M::Int64 = 1,
         α::Float64 = 0.95,
-        ε::Float64 = 1.0e-08
+        ε::Float64 = 1.0e-08,
+        relax::Symbol = :h
     )::Nothing
-        S = surfacetemperature(cf)
+        relax = (relax == :h) ? relaxenthalpy! : relaxtemperature!
 
         r = cf.this
+
+        S = surfacetemperature(cf)
+        f = getrootfinder(r.enthalpy)
+
         T = r.fvdata.x
         A = r.fvdata.A
         b = r.fvdata.b
         a = r.fvdata.c[1]
         h = r.enthalpy
 
-        f = getrootfinder(r.enthalpy)
+        Tm = T
+        hm = h.(Tm)
 
-        niter = 0
-        while (niter < M)
-            niter += 1
-            εm = updatetemperature(A, b, a, T, S, f, h, α)
+        b[1:end] = 2a * S
+        b[1] += 2h(Tm[1])
+
+        for niter in 1:M
+            # Resolve sistema linear de FVM.
+            h̄ = A \ (b - a * (Tm[1:end-1] + Tm[2:end]))
+
+            # Relaxa solução para gerir não linearidades.
+            εm = relax(Tm, hm, h̄, α, f)
+
+            # Verifica status da convergência.
+            # residual[niter] = εm
+
             if (εm <= ε)
                 return
             end
@@ -328,15 +361,15 @@ end
 
 # ╔═╡ b1ccbbf0-cded-4831-8ecf-4b5534ae9fa4
 let
-    r₁, r₂ = createprfpair1(; N = 500)
+    r₁, r₂ = createprfpair1(; N = 1000)
     cf = CounterFlowPFRModel(r₁, r₂)
 
     outerloop(cf;
-        inner = 25,
-        outer = 500,
-        relax = 0.99,
-        Δhmax = 1.0e-06,
-        ΔTmax = 1.0e-08
+        inner = 5,
+        outer = 100,
+        relax = 0.0,
+        Δhmax = 1.0e-10,
+        ΔTmax = 1.0e-10
     )
 
     plotpfrpair(cf)
@@ -373,11 +406,11 @@ md"""
 # ╟─cc1a6701-8907-440a-a77b-b89ec6abac65
 # ╟─f1cc566b-87bb-42be-a0a5-c160f326817f
 # ╟─eecf85b0-180c-49c5-83ab-619ba6683960
-# ╟─9a529019-9cfc-4018-a7ce-051e6dbdd85e
-# ╠═7afff466-5463-431f-b817-083fe6102a8c
 # ╟─7a278913-bf0f-4532-9c9b-f42aded9b6e9
+# ╟─9a529019-9cfc-4018-a7ce-051e6dbdd85e
 # ╟─b1ccbbf0-cded-4831-8ecf-4b5534ae9fa4
 # ╟─f3b7d46f-0fcc-4f68-9822-f83e977b87ee
+# ╠═7afff466-5463-431f-b817-083fe6102a8c
 # ╟─9f1357f1-1e7b-4f55-9f4b-cc6a1fd3e2aa
 # ╟─975744de-7ab0-4bfa-abe5-3741ec7ec1cf
 # ╟─8b677cdd-bd4e-447a-aa78-99b5cab810a6
