@@ -130,6 +130,40 @@ struct CounterFlowPFRModel
     that::IncompressibleEnthalpyPFRModel
 end
 
+"Gestor de resíduos durante uma simulação."
+mutable struct ResidualsRaw
+    inner::Int64
+    outer::Int64
+    counter::Int64
+    innersteps::Vector{Int64}
+    residuals::Vector{Float64}
+    function ResidualsRaw(inner::Int64, outer::Int64)
+        innersteps = -ones(Int64, outer)
+        residuals = -ones(Float64, outer * inner)
+        return new(inner, outer, 0, innersteps, residuals)
+    end
+end
+
+"Resíduos de uma simulação processados."
+struct ResidualsProcessed
+    counter::Int64
+    innersteps::Vector{Int64}
+    residuals::Vector{Float64}
+    finalsteps::Vector{Int64}
+    finalresiduals::Vector{Float64}
+
+    function ResidualsProcessed(r::ResidualsRaw)
+        innersteps = r.innersteps[r.innersteps .> 0.0]
+        residuals = r.residuals[r.residuals .> 0.0]
+
+        finalsteps = cumsum(innersteps)
+        finalresiduals = residuals[finalsteps]
+
+        return new(r.counter, innersteps, residuals,
+                   finalsteps, finalresiduals)
+    end
+end
+
 "Macro para capturar erro dada uma condição invalida."
 macro warnonly(ex)
     quote
@@ -201,6 +235,13 @@ function dittusboelter_Nu(Re, Pr, L, D; what = :heating)
 
     n = (what == :heating) ? 0.4 : 0.4
     return 0.023 * Re^(4 / 5) * Pr^n
+end
+
+"Alimenta resíduos da simulação no laço interno."
+function feedinnerresidual(r::ResidualsRaw, ε::Float64)
+    # TODO: add resizing test here!
+    r.counter += 1
+    r.residuals[r.counter] = ε
 end
 
 "Cria o par inverso de reatores em contra-fluxo."
@@ -283,6 +324,82 @@ function relaxtemperature!(Tm, hm, h̄, α, f)
     Tm[2:end] += Δ
 
     return ε
+end
+
+"Laço interno da solução de reatores em contra-corrente."
+function innerloop(
+        residual::ResidualsRaw;
+        cf::CounterFlowPFRModel,
+        M::Int64 = 1,
+        α::Float64 = 0.95,
+        ε::Float64 = 1.0e-08,
+        relax::Symbol = :h
+    )::Int64
+    relax = (relax == :h) ? relaxenthalpy! : relaxtemperature!
+
+    r = cf.this
+
+    S = surfacetemperature(cf)
+    f = getrootfinder(r.enthalpy)
+
+    T = r.fvdata.x
+    A = r.fvdata.A
+    b = r.fvdata.b
+    a = r.fvdata.c[1]
+    h = r.enthalpy
+
+    Tm = T
+    hm = h.(Tm)
+
+    b[1:end] = 2a * S
+    b[1] += 2h(Tm[1])
+
+    for niter in 1:M
+        h̄ = A \ (b - a * (Tm[1:end-1] + Tm[2:end]))
+        εm = relax(Tm, hm, h̄, α, f)
+        feedinnerresidual(residual, εm)
+
+        if (εm <= ε)
+            return niter
+        end
+    end
+
+    @warn "Não convergiu após $(M) passos"
+    return M
+end
+
+"Laço externo da solução de reatores em contra-corrente."
+function outerloop(
+        cf::CounterFlowPFRModel;
+        inner::Int64 = 5,
+        outer::Int64 = 500,
+        relax::Float64 = 0.95,
+        Δhmax::Float64 = 1.0e-08,
+        rtol::Float64 = 1.0e-08,
+    )::Tuple{ResidualsProcessed, ResidualsProcessed}
+    ra = cf
+    rb = swap(ra)
+
+    resa = ResidualsRaw(inner, outer)
+    resb = ResidualsRaw(inner, outer)
+
+    @time for nouter in 1:outer
+        shared = (M = inner, α = relax, ε = rtol)
+
+        ca = innerloop(resa; cf = ra, shared...)
+        cb = innerloop(resb; cf = rb, shared...)
+
+        resa.innersteps[nouter] = ca
+        resb.innersteps[nouter] = cb
+
+        if enthalpyresidual(cf) < Δhmax
+            @info("Laço externo convergiu após $(nouter) iterações")
+            break
+        end
+    end
+
+    @info("Conservação da entalpia = $(enthalpyresidual(cf))")
+    return ResidualsProcessed(resa), ResidualsProcessed(resb)
 end
 
 "Dados usados nos notebooks da série."
