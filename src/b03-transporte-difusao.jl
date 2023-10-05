@@ -55,6 +55,11 @@ const L = 0.004
 # ╔═╡ 1a1aaeb6-060a-4352-bf93-aa2b3c665119
 @bind go PlutoUI.Button("Go!")
 
+# ╔═╡ 6b169165-92ab-4386-802e-ce7d11c0a471
+function outerloop()
+
+end
+
 # ╔═╡ 7fc69ea4-015f-4913-94ff-e3e0820af12b
 md"""
 ## Carbonitretação austenítica
@@ -104,10 +109,10 @@ function plotprofile(;
     ax.title = "Ganho de massa $(@sprintf("%.1f", m)) g/m²"
     ax.xticks = xticks
     ax.yticks = yticks
-    
+
     xlims!(ax, extrema(xticks))
     ylims!(ax, extrema(yticks))
-    
+
     lines!(ax,  1000z, 100yc)
 
     if showstairs
@@ -125,23 +130,23 @@ function plotresiduals(r, ε; yticks = -13:2:-1)
 
     xs = r.finalsteps
     ys = log10.(r.finalresiduals)
-    
+
     δi = closestpowerofx(xg[end]/10; x = 10)
     imax = closestpowerofx(xg[end]; x = 10)
     xticks = 0:δi:imax
-    
+
     fig = Figure(resolution = (720, 500))
-    
+
     ax = Axis(fig[1, 1], yscale = identity)
     ax.xlabel = "Iteração global"
     ax.ylabel = "log10(Resíduo)"
     ax.title = "Máximo de iterações $(maximum(r.innersteps)) por passo de tempo"
     ax.xticks = xticks
     ax.yticks = yticks
-    
+
     xlims!(ax, extrema(xticks))
     ylims!(ax, extrema(yticks))
-    
+
     lines!(ax, xg, yg, color = :black, linewidth = 0.5)
     scatter!(ax, xs, ys, color = :red)
 
@@ -164,6 +169,8 @@ begin
     rngI = 1:1:100
     rngh = -8:1:0
     rngT = 1123.15:25.0:1273.15
+    rngα = 0.0:0.05:1.0
+    rngε = -15:1:-2
 end;
 
 # ╔═╡ 8fe591cd-f3f7-4cf8-8d91-92c6dff1dd01
@@ -173,7 +180,7 @@ begin
     function masstomolefraction(w)
         return w * (w / 0.012 + (1 - w) / 0.055)^(-1) / 0.012
     end
-    
+
     function moletomassfraction(x)
         return 0.012 * x / (0.012*x + (1 - x) * 0.055)
     end
@@ -198,6 +205,8 @@ Parâmetros de solução:
 | $(@bind N PlutoUI.Slider(rngN, default=2000, show_value=true)) | Volumes de controle
 | $(@bind M PlutoUI.Slider(rngM, default=20,   show_value=true)) | Passos de tempo
 | $(@bind I PlutoUI.Slider(rngI, default=50,   show_value=true)) | Iterações por passo
+| $(@bind α PlutoUI.Slider(rngα, default=0.5,  show_value=true)) | Relaxação
+| $(@bind ε PlutoUI.Slider(rngε, default=-8,   show_value=true)) | Expoente da tolerância
 
 Parâmetros físicos
 
@@ -221,17 +230,17 @@ const auto∞ = masstomolefraction(0.0095)
 # ╔═╡ efed88fb-9b89-4896-acc3-cec5f3462978
 begin
     const R = 8.314_462_618_153_24
-    
+
     struct HalfCellBoundaryFVM
         "Coordenadas dos centros das células [m]."
         z::Vector{Float64}
-    
+
         "Coordenadas dos limites das células [m]."
         w::Vector{Float64}
-    
+
         "Comprimento de uma célula [m]."
         δ::Float64
-    
+
         function HalfCellBoundaryFVM(; L::Float64, N::Int64)
             δ = L / N
             z = collect(0.0:δ:L)
@@ -239,24 +248,24 @@ begin
             return new(z, w, δ)
         end
     end
-    
+
     function diffcoef₁(T::Float64, x₁::Float64)::Float64
         A = 4.84e-05exp(-38.0x₁) / (1.0 - 5.0x₁)
         E = 155_000.0 - 570_000.0x₁
         return A * exp(- E / (R * T))
     end
-    
+
     function harmonic(k::Vector{Float64})::Vector{Float64}
         ke, kw = k[1:end-1], k[2:end-0]
         return @. 2 * ke * kw / (ke + kw)
     end
-    
+
     function createproblem(N)
         A = Tridiagonal(zeros(N-1), zeros(N), zeros(N-1))
         b = zeros(N)
         return A, b
     end
-    
+
     function updatematrix!(
             M::Tridiagonal{Float64, Vector{Float64}},
             x::Vector{Float64},
@@ -267,20 +276,20 @@ begin
         )::Nothing
         D = map((x)->diffcoef₁(T, x), x)
         d = harmonic(D)
-    
+
         β = τ / δ
         γ = d[1] / δ
-    
+
         M.dl[:] = -(β / δ) * d
         M.du[:] = -(β / δ) * d
-    
+
         M.d[:] .= 1.0
         M.d[1:end-1] -= M.du
         M.d[2:end-0] -= M.dl
-    
+
         M.d[1]  = 1 + β * (h + γ)
         M.du[1] = β * γ
-    
+
         return nothing
     end
 
@@ -306,7 +315,8 @@ function innerloop(;
 
         Δx = (1-α) * (A\b - x)
         εm = maximum(abs.(Δx)) / maximum(x)
-        feedinnerresidual(residual, εm)		
+
+        feedinnerresidual(residual, εm)
         x[:] += Δx
 
         if εm <= ε
@@ -322,17 +332,15 @@ end
 begin
     go
 
-    αᵣ = 0.15
-    εᵣ = 1.0e-08
-    
+
     hₘ = 10.0^h
-    
+
     x∞  = aero∞
     x₁₀ = C
 
     domain = HalfCellBoundaryFVM(; L = L/2, N = N)
     A, b = createproblem(N+1)
-    
+
     x = x₁₀ * ones(N+1)
     u = copy(x)
     τ = t / M
@@ -341,11 +349,11 @@ begin
     inner = I
     outer = length(times)
     residual = ResidualsRaw(inner, outer)
-    
+
     for (nouter, ts) in enumerate(times)
         b[:] = x[:]
         b[1] += (τ / domain.δ) * hₘ * x∞
-    
+
         residual.innersteps[nouter] = innerloop(;
             residual = residual,
             A = A,
@@ -356,13 +364,13 @@ begin
             δ = domain.δ,
             h = hₘ,
             M = inner,
-            α = αᵣ,
-            ε = εᵣ
+            α = α,
+            ε = 10.0^ε
         )
     end
 
     finalresidual = ResidualsProcessed(residual)
-    
+
     fig1 = plotprofile(;
         z   = domain.z,
         yc  = moletomassfraction.(x),
@@ -371,7 +379,7 @@ begin
         yn₀ = nothing
     )
 
-    fig2 = plotresiduals(finalresidual, εᵣ; yticks = -10:2:0)
+    fig2 = plotresiduals(finalresidual, 10.0^ε; yticks = -10:2:0)
 end;
 
 # ╔═╡ 98f18741-d76c-46b4-91dc-a44eb8e4a67f
@@ -398,6 +406,7 @@ md"""
 # ╟─98f18741-d76c-46b4-91dc-a44eb8e4a67f
 # ╟─aca99c04-1987-4cb9-a923-5c8d55121001
 # ╠═1e875527-cd12-4a24-93c2-04933b661c5c
+# ╠═6b169165-92ab-4386-802e-ce7d11c0a471
 # ╠═bb5c9e93-0ec4-4395-b646-c0ab1deb70c1
 # ╟─7fc69ea4-015f-4913-94ff-e3e0820af12b
 # ╟─0e077ba1-e451-4982-a6bd-a3fc7f2c6a89
