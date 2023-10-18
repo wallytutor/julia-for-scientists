@@ -43,6 +43,39 @@ md"""
 $(toc)
 """
 
+# ╔═╡ be9ac055-bccf-41d1-9616-8893d51b980d
+md"""
+## Nota sobre o ganho de massa
+
+```math
+\rho_{Fe} = \frac{m_{Fe}}{V_{cell}}
+```
+
+```math
+y_{C} = \frac{m_{C}}{m_{Fe} + m_{C}}
+```
+
+```math
+m_{Fe+C} = \frac{m_{Fe}}{1 - y_{C}}
+```
+
+```math
+\rho_{Fe+C} = \rho_{Fe}\frac{1}{1 - y_{C}}
+```
+
+```math
+\sigma = \int_{0}^{L}\rho(z)y_{C}(z)dz
+```
+
+```math
+\sigma = \rho_{Fe}\int_{0}^{L}\frac{y_{C}(z)}{1-y_{C}(z)}dz
+```
+
+```math
+\Delta\sigma = \rho_{Fe}\left(\int_{0}^{L}\frac{y_{C}(z)}{1-y_{C}(z)}dz\right)\biggr\vert_{t=0}^{t=t_{f}}
+```
+"""
+
 # ╔═╡ c20a6318-26a3-4971-be92-bfc1c79d8c3f
 md"""
 ## Materiais
@@ -96,7 +129,9 @@ function plotprofile(;
         ρ::Float64 = 7890.0,
         showstairs::Bool = false
     )
-    m = 1000 * ρ * trapz(z, yc.-yc₀)
+	σ₀ = yc₀ * last(z) / (1 - yc₀)
+	σ₁ = trapz(z, @. yc / (1 - yc))
+	m = 1000ρ  * (σ₁ - σ₀)
 
     xticks = 0.0:0.3:1000z[end]
     yticks = 0.0:0.2:1.2
@@ -395,6 +430,7 @@ md"""
 
 # ╔═╡ Cell order:
 # ╟─30c163e1-4af6-4776-887b-2835cf488407
+# ╟─be9ac055-bccf-41d1-9616-8893d51b980d
 # ╟─c20a6318-26a3-4971-be92-bfc1c79d8c3f
 # ╟─75d6913c-bf90-4b1c-9fdd-0e9e9c9e26f6
 # ╟─50545d72-c312-437f-94c2-8c907327f17b
@@ -413,12 +449,12 @@ md"""
 # ╟─1eecfc46-2403-4378-95bc-7cd0807b50df
 # ╠═a28e78ec-fcef-4ab5-8b65-9260c3cfd8a4
 # ╟─f3c9aea8-653d-49c2-a806-0d1b3a263012
-# ╟─fe489f21-c657-465a-b8a9-948dfc93051b
+# ╠═fe489f21-c657-465a-b8a9-948dfc93051b
 # ╟─8b9cf875-78b6-466a-9e43-f3eceb8d027a
 # ╟─f9a24b0f-d820-48d1-a048-853dd994a249
 # ╟─63a9fa87-92f1-444a-8bcf-dde5d682e099
 # ╟─8fe591cd-f3f7-4cf8-8d91-92c6dff1dd01
-# ╟─efed88fb-9b89-4896-acc3-cec5f3462978
+# ╠═efed88fb-9b89-4896-acc3-cec5f3462978
 # ╟─7b591c27-18d8-4022-9b6a-bb0c0ccce888
 # ╟─73b13fb0-62b6-11ee-27bf-69788069829a
 # ╟─f6cdb233-9b99-48ff-bce4-4f359a35f591
