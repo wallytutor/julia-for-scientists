@@ -4,16 +4,6 @@
 using Markdown
 using InteractiveUtils
 
-# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
-macro bind(def, element)
-    quote
-        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
-        local el = $(esc(element))
-        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
-        el
-    end
-end
-
 # ╔═╡ 73b13fb0-62b6-11ee-27bf-69788069829a
 begin
     import Pkg
@@ -43,45 +33,10 @@ md"""
 $(toc)
 """
 
-# ╔═╡ f3f32e4b-5ebd-4ce1-bc42-907eb54789e7
-
-
 # ╔═╡ c20a6318-26a3-4971-be92-bfc1c79d8c3f
 md"""
 ## Materiais
 """
-
-# ╔═╡ 01fde065-7081-4255-9a52-a69c2c9f4afb
-"Espessura das placas tratadas [m]"
-const L = 0.004
-
-# ╔═╡ 1a1aaeb6-060a-4352-bf93-aa2b3c665119
-@bind go PlutoUI.Button("Go!")
-
-# ╔═╡ 6b169165-92ab-4386-802e-ce7d11c0a471
-function outerloop()
-
-end
-
-# ╔═╡ 7fc69ea4-015f-4913-94ff-e3e0820af12b
-md"""
-## Carbonitretação austenítica
-"""
-
-# ╔═╡ 0e077ba1-e451-4982-a6bd-a3fc7f2c6a89
-md"""
-## Anexos
-"""
-
-# ╔═╡ 1eecfc46-2403-4378-95bc-7cd0807b50df
-md"""
-### Modelos
-"""
-
-# ╔═╡ a28e78ec-fcef-4ab5-8b65-9260c3cfd8a4
-struct CarburizingModel
-
-end
 
 # ╔═╡ f3c9aea8-653d-49c2-a806-0d1b3a263012
 md"""
@@ -99,9 +54,16 @@ function plotprofile(;
         ρ::Float64 = 7890.0,
         showstairs::Bool = false
     )
-	σ₀ = yc₀ * last(z) / (1 - yc₀)
-	σ₁ = trapz(z, @. yc / (1 - yc))
-	m = 1000ρ  * (σ₁ - σ₀)
+	function interstitialmassintake(z, y0, yf; ρ = 7890.0)
+	    σ₀ = y0 * last(z) / (1.0 - y0)
+	    σ₁ = trapz(z, @. yf / (1.0 - yf))
+	    return 1000ρ  * (σ₁ - σ₀)
+	end
+
+	m = interstitialmassintake(z, yc₀, yc)
+	# σ₀ = yc₀ * last(z) / (1 - yc₀)
+	# σ₁ = trapz(z, @. yc / (1 - yc))
+	# m = 1000ρ  * (σ₁ - σ₀)
 
     xticks = 0.0:0.3:1000z[end]
     yticks = 0.0:0.2:1.2
@@ -190,47 +152,6 @@ begin
         return 0.012 * x / (0.012*x + (1 - x) * 0.055)
     end
 end;
-
-# ╔═╡ 75d6913c-bf90-4b1c-9fdd-0e9e9c9e26f6
-"Fração molar em carbono na liga."
-const aeroc = masstomolefraction(0.0016)
-
-# ╔═╡ 50545d72-c312-437f-94c2-8c907327f17b
-"Fração molar em carbono na liga."
-const autoc = masstomolefraction(0.0023)
-
-# ╔═╡ 518e9825-dea1-4c8f-9395-d21b33e386e3
-md"""
-## Cementação austenítica
-
-Parâmetros de solução:
-
-|______________________________|_______________________|
-|:-----------------------------|:----------------------|
-| $(@bind N PlutoUI.Slider(rngN, default=2000, show_value=true)) | Volumes de controle
-| $(@bind M PlutoUI.Slider(rngM, default=20,   show_value=true)) | Passos de tempo
-| $(@bind I PlutoUI.Slider(rngI, default=50,   show_value=true)) | Iterações por passo
-| $(@bind α PlutoUI.Slider(rngα, default=0.5,  show_value=true)) | Relaxação
-| $(@bind ε PlutoUI.Slider(rngε, default=-8,   show_value=true)) | Expoente da tolerância
-
-Parâmetros físicos
-
-|______________________________|_______________________|
-|:-----------------------------|:----------------------|
-$(@bind C PlutoUI.Select([aeroc=>"16NiCrMo13", autoc=>"23MnCrMo5"])) | Liga
-$(@bind t PlutoUI.Slider(rngt, default=7200,   show_value=true)) | Duração física [s]
-$(@bind h PlutoUI.Slider(rngh, default=0,      show_value=true)) | Expoente de hₘ
-$(@bind T PlutoUI.Slider(rngT, default=1173.0, show_value=true)) | Temperatura [K]
-
-"""
-
-# ╔═╡ 89dfc30a-f103-496a-b794-f341b53f09dc
-"Fração molar em carbono equivalente ao potencial da atmosfera."
-const aero∞ = masstomolefraction(0.0100)
-
-# ╔═╡ 995acd5a-7dc1-42fd-ad12-e7fbef516f12
-"Fração molar em carbono equivalente ao potencial da atmosfera."
-const auto∞ = masstomolefraction(0.0095)
 
 # ╔═╡ efed88fb-9b89-4896-acc3-cec5f3462978
 begin
@@ -335,56 +256,65 @@ end
 
 # ╔═╡ 1e875527-cd12-4a24-93c2-04933b661c5c
 begin
-    go
+	N = 2000
+	L = 0.002
+	T = 1173.0
+	τ = 50.0
+	
+	t = 7200.0 
+    x0 = masstomolefraction(0.0023)
+    xs  = masstomolefraction(0.0095)
+    h = 1.0
+	
+	M = 50
 
+	α = 0.05
+	ε = 1.0e-08 
 
-    hₘ = 10.0^h
-
-    x∞  = aero∞
-    x₁₀ = C
-
-    domain = HalfCellBoundaryFVM(; L = L/2, N = N)
-    A, b = createproblem(N+1)
-
-    x = x₁₀ * ones(N+1)
-    u = copy(x)
-    τ = t / M
-    times = 0.0:τ:t
-
-    inner = I
-    outer = length(times)
-    residual = ResidualsRaw(inner, outer)
-
-    for (nouter, ts) in enumerate(times)
-        b[:] = x[:]
-        b[1] += (τ / domain.δ) * hₘ * x∞
-
-        residual.innersteps[nouter] = innerloop(;
-            residual = residual,
-            A = A,
-            x = x,
-            b = b,
-            T = T,
-            τ = τ,
-            δ = domain.δ,
-            h = hₘ,
-            M = inner,
-            α = α,
-            ε = 10.0^ε
-        )
-    end
-
-    finalresidual = ResidualsProcessed(residual)
-
+	@time begin
+	    domain = HalfCellBoundaryFVM(; L = L, N = N)
+	    A, b = createproblem(N+1)
+	
+	    x = x0 * ones(N+1)
+	    u = copy(x)
+	
+	    times = 0.0:τ:t
+	
+	    inner = M
+	    outer = length(times)
+	    residual = ResidualsRaw(inner, outer)
+	
+	    for (nouter, ts) in enumerate(times)
+	        b[:] = x[:]
+	        b[1] += (τ / domain.δ) * h * xs
+	
+	        residual.innersteps[nouter] = innerloop(;
+	            residual = residual,
+	            A = A,
+	            x = x,
+	            b = b,
+	            T = T,
+	            τ = τ,
+	            δ = domain.δ,
+	            h = h,
+	            M = inner,
+	            α = α,
+	            ε = ε
+	        )
+	    end
+	
+	    finalresidual = ResidualsProcessed(residual)
+	end
+	
     fig1 = plotprofile(;
         z   = domain.z,
         yc  = moletomassfraction.(x),
-        yc₀ = moletomassfraction.(aeroc),
+        yc₀ = moletomassfraction.(x0),
         yn  = nothing,
         yn₀ = nothing
     )
 
-    fig2 = plotresiduals(finalresidual, 10.0^ε; yticks = -10:2:0)
+    fig2 = plotresiduals(finalresidual, ε; yticks = -10:2:0)
 end;
 
 # ╔═╡ 98f18741-d76c-46b4-91dc-a44eb8e4a67f
@@ -399,25 +329,12 @@ md"""
 """
 
 # ╔═╡ Cell order:
-# ╠═30c163e1-4af6-4776-887b-2835cf488407
-# ╠═f3f32e4b-5ebd-4ce1-bc42-907eb54789e7
+# ╟─30c163e1-4af6-4776-887b-2835cf488407
 # ╟─c20a6318-26a3-4971-be92-bfc1c79d8c3f
-# ╟─75d6913c-bf90-4b1c-9fdd-0e9e9c9e26f6
-# ╟─50545d72-c312-437f-94c2-8c907327f17b
-# ╟─89dfc30a-f103-496a-b794-f341b53f09dc
-# ╟─995acd5a-7dc1-42fd-ad12-e7fbef516f12
-# ╟─01fde065-7081-4255-9a52-a69c2c9f4afb
-# ╠═518e9825-dea1-4c8f-9395-d21b33e386e3
-# ╠═1a1aaeb6-060a-4352-bf93-aa2b3c665119
 # ╟─98f18741-d76c-46b4-91dc-a44eb8e4a67f
 # ╟─aca99c04-1987-4cb9-a923-5c8d55121001
 # ╠═1e875527-cd12-4a24-93c2-04933b661c5c
-# ╠═6b169165-92ab-4386-802e-ce7d11c0a471
 # ╠═bb5c9e93-0ec4-4395-b646-c0ab1deb70c1
-# ╟─7fc69ea4-015f-4913-94ff-e3e0820af12b
-# ╟─0e077ba1-e451-4982-a6bd-a3fc7f2c6a89
-# ╟─1eecfc46-2403-4378-95bc-7cd0807b50df
-# ╠═a28e78ec-fcef-4ab5-8b65-9260c3cfd8a4
 # ╟─f3c9aea8-653d-49c2-a806-0d1b3a263012
 # ╠═fe489f21-c657-465a-b8a9-948dfc93051b
 # ╟─8b9cf875-78b6-466a-9e43-f3eceb8d027a
