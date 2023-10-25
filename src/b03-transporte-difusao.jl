@@ -46,132 +46,6 @@ $(toc)
 # ╔═╡ f3f32e4b-5ebd-4ce1-bc42-907eb54789e7
 
 
-# ╔═╡ dd839c47-8340-4cdf-bb32-067ba293d522
-md"""
-```math
-\frac{\partial{}x}{\partial{}t}=\nabla\cdotp{}(D(x)\nabla{}T)
-```
-
-```math
-\frac{\partial{}x}{\partial{}t}=
-\frac{\partial}{\partial{}x}
-\left(D(x)\frac{\partial{}x}{\partial{}z}\right)
-```
-
-```math
-\int_{s}^{n}\int_{0}^{\tau}
-\frac{\partial{}x}{\partial{}t}dtdz=
-\int_{0}^{\tau}\int_{s}^{n}
-\frac{\partial}{\partial{}z}
-\left(D(x)\frac{\partial{}x}{\partial{}z}\right)dzdt
-```
-
-```math
-\left(x_P^{\tau}-x_P^{0}\right)(w_{n}-w_{s})=
-\int_{0}^{\tau}
-\left(D(x)\frac{\partial{}T}{\partial{}r}\right)\bigg\vert_{s}^{n}dt
-```
-
-"""
-
-# ╔═╡ f4e14699-a034-40d0-9219-4b5d4efada6b
-md"""
-```math
-\begin{align}
-\left(x_P^{\tau}-x_P^{0}\right)\frac{(w_{n}-w_{s})}{\tau}&=
-f\left[
-D(x_n)\frac{x_N^{\tau}-x_P^{\tau}}{\delta_{P,N}}-
-D(x_s)\frac{x_P^{\tau}-x_S^{\tau}}{\delta_{P,S}}
-\right]\\[8pt]
-&+(1-f)\left[
-D(x_n)\frac{x_N^{0}-x_P^{0}}{\delta_{P,N}}-
-D(x_s)\frac{x_P^{0}-x_S^{0}}{\delta_{P,S}}
-\right]
-\end{align}
-```
-
-```math
-\begin{align}
-\alpha_{P}  & = \frac{(w_{n}-w_{s})}{\tau}\\[8pt]
-\beta_{j}   & = \frac{D(x_j)}{\delta_{P,J}}
-\end{align}
-```
-
-```math
--f\beta_{s}x_S+
-(\alpha_{P}+f\beta_{n}+f\beta_{s})x_P
--f\beta_{n}x_N
-=
-g\beta_{s}x_S^{0}+
-(\alpha_{P}-g\beta_{n}-g\beta_{s})x_P^{0}+
-g\beta_{n}x_N^{0}
-```
-"""
-
-# ╔═╡ fe2492ee-d95c-4582-9ccd-a27763705393
-md"""
-```math
--\beta_{s}x_S+
-(\alpha_{P}+\beta_{n}+\beta_{s})x_P
--\beta_{n}x_N
-=
-\alpha_{P}x_P^{0}
-```
-
-```math
-\begin{align}
-a_{S} & = -\beta_{s}\\[8pt]
-a_{N} & = -\beta_{n}\\[8pt]
-a_{P} & = \alpha_{P}+\beta_{n}+\beta_{s}
-\end{align}
-```
-
-```math
-a_Sx_S + a_Px_P + a_Nx_N = \alpha_{P}x_P^{0}
-```
-
-```math
-a_1x_P + a_Nx_N = \alpha_{P}x_P^{0}\quad\text{where}\quad{}a_1=\alpha_{P}+\beta_{n}
-```
-
-```math
-a_Sx_S + a_Rx_P = \alpha_{P}x_P^{0}+hx_\infty\quad\text{where}\quad{}a_R=\alpha_{P}+h+\beta_{s}
-```
-"""
-
-# ╔═╡ be9ac055-bccf-41d1-9616-8893d51b980d
-md"""
-## Nota sobre o ganho de massa
-
-```math
-\rho_{Fe} = \frac{m_{Fe}}{V_{cell}}
-```
-
-```math
-y_{C} = \frac{m_{C}}{m_{Fe} + m_{C}}
-```
-
-```math
-m_{Fe+C} = \frac{m_{Fe}}{1 - y_{C}}
-```
-
-```math
-\rho_{Fe+C} = \rho_{Fe}\frac{1}{1 - y_{C}}
-```
-
-```math
-\sigma = \int_{0}^{L}\rho(z)y_{C}(z)dz
-```
-
-```math
-\sigma = \rho_{Fe}\int_{0}^{L}\frac{y_{C}(z)}{1-y_{C}(z)}dz
-```
-
-```math
-\Delta\sigma = \rho_{Fe}\left(\int_{0}^{L}\frac{y_{C}(z)}{1-y_{C}(z)}dz\right)\biggr\vert_{t=0}^{t=t_{f}}
-```
-"""
-
 # ╔═╡ c20a6318-26a3-4971-be92-bfc1c79d8c3f
 md"""
 ## Materiais
@@ -525,12 +399,8 @@ md"""
 """
 
 # ╔═╡ Cell order:
-# ╟─30c163e1-4af6-4776-887b-2835cf488407
+# ╠═30c163e1-4af6-4776-887b-2835cf488407
 # ╠═f3f32e4b-5ebd-4ce1-bc42-907eb54789e7
-# ╟─dd839c47-8340-4cdf-bb32-067ba293d522
-# ╟─f4e14699-a034-40d0-9219-4b5d4efada6b
-# ╟─fe2492ee-d95c-4582-9ccd-a27763705393
-# ╟─be9ac055-bccf-41d1-9616-8893d51b980d
 # ╟─c20a6318-26a3-4971-be92-bfc1c79d8c3f
 # ╟─75d6913c-bf90-4b1c-9fdd-0e9e9c9e26f6
 # ╟─50545d72-c312-437f-94c2-8c907327f17b
