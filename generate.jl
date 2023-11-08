@@ -37,17 +37,17 @@ FORCE = false
 
 notebooks_ready = [
     "index"
-    "000-preambulo-e-pluto"
-    "001-primeiros-passos"
-    "002-manipulacao-textual"
-    "003-estruturas-de-dados"
-    "004-estruturas-de-dados"
-    "a01-colaboracao-cientifica"
-    "c01-reator-pistao"
-    "c02-reator-pistao"
+    "01-Fundamentos/000-preambulo-e-pluto"
+    "01-Fundamentos/001-primeiros-passos"
+    "01-Fundamentos/002-manipulacao-textual"
+    "01-Fundamentos/003-estruturas-de-dados"
+    "01-Fundamentos/004-estruturas-de-dados"
+    # "a01-colaboracao-cientifica"
+    # "c01-reator-pistao"
+    # "c02-reator-pistao"
     # "c03-reator-pistao"
     # "c04-reator-pistao"
-    "c99-reator-pistao"
+    # "c99-reator-pistao"
 ]
 
 workflow(notebooks_ready)
